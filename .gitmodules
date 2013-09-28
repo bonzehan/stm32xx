@@ -1,0 +1,3 @@
+[submodule "scons_doxygen"]
+  path = site_scons/site_tools/doxygen
+  url  = git://bitbucket.org/russel/scons_doxygen
