@@ -1,5 +1,5 @@
 /*
- * @COPYRIGHT@
+ * Copyright (c) by Pawel Tomulik <ptomulik@meil.pw.edu.pl>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -271,6 +271,9 @@ crh_mask(pins_t pins)
 /* GPIO operations with compile time arguments */
 namespace stm32xx {
 namespace gpio {
+/** // doc: namespace ct {{{
+ * Compile-time machinery supporting configuration of STM32 GPIOs 
+ */ // }}}
 namespace ct {
 
 /** // doc: gpio::ct::crl_cnf_bits {{{

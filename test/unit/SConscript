@@ -1,0 +1,17 @@
+Import('env', 'options')
+
+unit = env.Program('run-tests',
+  ['run_tests.cpp'] + env.Glob('stm32xx/*_test.cpp'),
+  CXXFLAGS = env.get('CXXFLAGS', []) + [
+    '-include', 'CppUTest/MemoryLeakDetectorNewMacros.h',
+    '-include', 'CppUTest/MemoryLeakDetectorMallocMacros.h'
+  ],
+  CFLAGS = env.get('CXXFLAGS', []) + [
+    '-include', 'CppUTest/MemoryLeakDetectorNewMacros.h',
+    '-include', 'CppUTest/MemoryLeakDetectorMallocMacros.h'
+  ],
+  LIBS = env.get('LIBS', []) + [
+    'CppUTest', 'CppUTestExt'
+  ],
+  **options
+)

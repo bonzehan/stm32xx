@@ -1,3 +1,9 @@
 [submodule "scons_doxygen"]
-  path = site_scons/site_tools/doxygen
-  url  = git://bitbucket.org/russel/scons_doxygen
+	path = site_scons/site_tools/doxygen
+	url = git://github.com/ptomulik/scons_doxygen.git
+[submodule "doc"]
+	path = doc
+	url = git://github.com/ptomulik/scons-doxygen-template.git
+[submodule "cpputest"]
+	path = external/cpputest
+	url = git@github.com:cpputest/cpputest.git

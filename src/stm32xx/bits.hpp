@@ -1,5 +1,5 @@
 /*
- * @COPYRIGHT@
+ * Copyright (c) by Pawel Tomulik <ptomulik@meil.pw.edu.pl>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -27,14 +27,17 @@
 #ifndef STM32XX_BITS_HPP_INCLUDED
 #define STM32XX_BITS_HPP_INCLUDED
 
-// FIXME: Isn't it necessary to include cstding (C++11)?
-//#include <cstdint>
-namespace stm32xx {
+#include <cstdint>
 
+namespace stm32xx {
 /** // doc: namespace bits {{{
- * @brief Some basic operations on bits. Mostly compile-time.
+ * @brief Some basic operations on bits. 
  */ // }}}
 namespace bits {
+/** // doc: namesapce ct {{{
+ * @brief Compile-time version of bit operations.
+ */ // }}}
+namespace ct {
 
 /** // doc: bits::get_bits {{{
  * @brief Meta-function to return the @c value held in masked.
@@ -96,7 +99,7 @@ template <typename _masked>
 template <uint32_t _bits, uint32_t _mask>
   struct masked
   {
-    static_assert((_bits&_mask)==_bits, "bits do not fit to their mask");
+    static_assert((_bits&_mask)==_bits, "bits do not fit to the mask");
     constexpr static uint32_t bits = _bits;
     constexpr static uint32_t mask = _mask;
   };
@@ -160,6 +163,7 @@ template <>
     constexpr static uint32_t value = 0;
   };
 
+} /* namespace ct */
 } /* namespace bits */
 } /* namespace stm32xx */
 
