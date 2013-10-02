@@ -1,7 +1,7 @@
 STM32++
 =======
 
-C++ utility library for STM32 firmware developers.
+C++ utility library for STM32 software developers.
 
 Testing
 -------
@@ -20,6 +20,6 @@ Running unit tests
 
     ./build/test/unit/run-tests
 
-Currently the unit tests are compiled an run on host only (not on target).
+Currently the unit tests are compiled and run on host only (not on target).
 
 .. <!--- vim: set expandtab tabstop=2 shiftwidth=2 syntax=rst: -->

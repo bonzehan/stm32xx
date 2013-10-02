@@ -93,8 +93,6 @@ template <typename _masked>
  * @code
  * typedef masked<0x11, 0x0F> mymasked;
  * @endcode
- *
- * @see accumulate
  */ // }}}
 template <uint32_t _bits, uint32_t _mask>
   struct masked
@@ -161,6 +159,47 @@ template <>
     constexpr static uint32_t bits = 0;
     constexpr static uint32_t mask = 0; 
     constexpr static uint32_t value = 0;
+  };
+
+/* Implementation of modify<> operation */
+template <uint32_t _bits, uint32_t _mask>
+  struct modify_impl
+  {
+    static_assert((_bits&_mask)==_bits, "bits do not fit to the mask");
+    template<typename T>
+    static void in(T& x)
+    {
+      x = (x & ~_mask) | _bits;
+    }
+  };
+
+template <uint32_t _bits>
+  struct modify_impl<_bits, 0ul>
+  {
+    static_assert(_bits==0ul, "bits do not fit to the mask");
+    template<typename T>
+    static void in(T&)
+    {
+      /* no bits to modify (mask is 0) */
+    }
+  };
+
+/** // doc: bits::modify {{{
+ * @brief Modify selected bits in a register or memory location.
+ *
+ * <b>Example</b>:
+ *
+ * This sets 16 most significant bits in @c var to @c 0x1234.
+ *
+ * @code
+ * using bits = masked<0x12340000, 0xFFFF0000ul>;
+ * modify<bits>::in(var);
+ * @endcode
+ */ // }}}
+template <typename _masked>
+  struct modify
+    : modify_impl<get_bits<_masked>::value, get_mask<_masked>::value>
+  {
   };
 
 } /* namespace ct */

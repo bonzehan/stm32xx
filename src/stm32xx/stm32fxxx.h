@@ -29,7 +29,7 @@
 
 #include <stm32xx/check.h>
 
-#if defined (STM32F10X)
+#if defined (STM32_FAMILY_STM32F10X)
 # include "stm32f10x.h"
 #endif
 

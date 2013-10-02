@@ -78,3 +78,12 @@ TEST(stm32xx__bits__ct, mix__with_two_args)
   CHECK_EQUAL((mix<m1,m2>::bits),  0x87654321ul);
   CHECK_EQUAL((mix<m1,m2>::mask),  0xFFFFFFFFul);
 }
+
+TEST(stm32xx__bits__ct, modify_modifies_only_masked_bits)
+{
+  using namespace stm32xx::bits::ct;
+  volatile uint32_t var = 0x5678ul;
+  using bits = masked<0x12340000ul, 0xFFFF0000ul>;
+  modify<bits>::in(var);
+  CHECK_EQUAL(var, 0x12345678ul);
+}
