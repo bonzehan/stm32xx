@@ -32,6 +32,8 @@
     defined (STM32F10X_HD) || defined (STM32F10X_HD_VL) || \
     defined (STM32F10X_XL) || defined (STM32F10X_CL)
 # define STM32_FAMILY_STM32F10X
+#elif defined (STM32F4XX) || defined (STM32F40XX) || defined(STM32F427X)
+# define STM32_FAMILY_STM32F4XX
 #else
 # error "No supported target MCU specified!"
 #endif

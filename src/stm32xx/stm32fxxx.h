@@ -31,6 +31,8 @@
 
 #if defined (STM32_FAMILY_STM32F10X)
 # include "stm32f10x.h"
+#elif defined(STM32_FAMILY_STM32F4XX)
+# include "stm32f4xx.h"
 #endif
 
 #endif /* STM32XX_STM32FXXX_H_INCLUDED */

@@ -29,10 +29,11 @@ import re
 import SCons.Errors
 
 local_opts =  [ 
-  'MCU_TARGET',
-  'MCU_FAMILY',
-  'MCU_CORE',
   'CMSIS_BASEDIR',
+  'MCU_CORE',
+  'MCU_FAMILY',
+  'MCU_TARGET',
+  'SCONSCRIPT_TARGET',
   'STDPERIPH_BASEDIR',
 ]
 
@@ -112,7 +113,7 @@ opts = dict([(k,v) for k,v in options.iteritems() if k in local_opts])
 # MCU_TARGET
 #
 try:             mcu_target = opts['MCU_TARGET']
-except KeyError: raise SCons.Errors.UserError('MCU_TARGET not specified')
+except KeyError: raise SCons.Errors.UserError('You must specify MCU_TARGET')
 if not mcu_target.upper() in mcu_targets:
     raise SCons.Errors.UserError('unsupported MCU_TARGET: %s' % mcu_target)
 mcu_target = mcu_target.upper()
@@ -124,14 +125,16 @@ mcu_family = opts.get('MCU_FAMILY', mcu_family_dict[mcu_target])
 mcu_family = mcu_family.upper()
 
 #
-# STDPERIPH_DIR
+# STDPERIPH_BASEDIR and STDPERIPH_DIR
 #
-stdperiph_basedir = opts.get('STDPERIPH_BASEDIR',env.Dir('#ST/StdPeriph'))
-stdperiph_dir = '%s/%s' % (stdperiph_basedir.get_path(), stdperiph_dict[mcu_family])
+try:             stdperiph_basedir = opts['STDPERIPH_BASEDIR']
+except KeyError: raise SCons.Errors.UserError('You must specify STDPERIPH_BASEDIR')
+stdperiph_dir = '%s/%s' % (stdperiph_basedir, stdperiph_dict[mcu_family])
 #
-# CMSIS_DIR 
+# CMSIS_BASEDIR 
 #
-cmsis_basedir = opts.get('CMSIS_BASEDIR',env.Dir('.'))
+try:             cmsis_basedir = opts['CMSIS_BASEDIR']
+except KeyError: raise SCons.Errors.UserError('You must specify CMSIS_BASEDIR')
 
 #
 # MCU_CORE
@@ -146,6 +149,7 @@ mcu_flags = []
 # CPPDEFINES
 #
 cppdefs = ovrr.get('CPPDEFINES', env.get('CPPDEFINES',[]))
+cppdefs = cppdefs[:] # make a copy
 if 'USE_STDPERIPH_DRIVER' not in cppdefs: cppdefs.append('USE_STDPERIPH_DRIVER')
 if mcu_target not in cppdefs:             cppdefs.append(mcu_target)
 ovrr['CPPDEFINES'] = cppdefs
@@ -155,31 +159,35 @@ ovrr['CPPDEFINES'] = cppdefs
 #
 subdirs = ['inc', 'tpl', '%s/Include' % cmsis_dict[mcu_family] ]
 cpppath = ovrr.get('CPPPATH', env.get('CPPPATH',[]))
+cpppath = cpppath[:] # make a copy
 cpppath += ['%s/%s' % (stdperiph_dir, s) for s in subdirs ]
-cpppath += ['%s/CMSIS/Include' % cmsis_basedir.get_path()]
-cpppath += ['#src']
+cpppath += ['%s/CMSIS/Include' % cmsis_basedir]
+cpppath += ['src']
 ovrr['CPPPATH'] = cpppath
 
 #
 # CFLAGS
 #
 cflags = ovrr.get('CFLAGS', env.get('CFLAGS', []))
+cflags = cflags[:] # make a copy
 cflags += mcu_flags
-cflags += ["-Wa,-adhlns='${TARGET}.lst'"]
+cflags += ["-std=c99", "-Wa,-adhlns='${TARGET}.lst'"]
 ovrr['CFLAGS'] = cflags
 
 #
 # CXXFLAGS
 #
-cxxflags = ovrr.get('CXXFLAGS', env.get('CXXFLAGS', []))
+cxxflags = ovrr.get('CXXFLAGS', env.get('CXXFLAGS', []))[:]
+cxxflags = cxxflags[:] # make a copy
 cxxflags += mcu_flags
-cxxflags += ["-Wa,-adhlns='${TARGET}.lst'"]
+cxxflags += ["-std=c++11", "-Wa,-adhlns='${TARGET}.lst'"]
 ovrr['CXXFLAGS'] = cxxflags
 
 #
 # LINKFLAGS
 #
-linkflags = ovrr.get('LINKFLAGS', env.get('LINKFLAGS', []))
+linkflags = ovrr.get('LINKFLAGS', env.get('LINKFLAGS', []))[:]
+linkflags = linkflags[:] # make a copy
 linkflags += mcu_flags
 ovrr['LINKFLAGS'] = linkflags
 
@@ -187,25 +195,55 @@ ovrr['LINKFLAGS'] = linkflags
 # LIBS
 #
 libs = ovrr.get('LIBS', env.get('LIBS', []))
-libs += ['CppUTest']
+libs = libs[:] # make a copy
 ovrr['LIBS'] = libs
 
-#
-# SOURCES
-#
-subdirs = ['src', 'tpl']
-sources = [ env.File('run_tests.cpp'), env.Glob('stm32xx/*_test.cpp') ]
-sources = Flatten(sources)
+sconscript_target = opts.get('SCONSCRIPT_TARGET', 'lib')
 
-#
-# TEST RUNNER NAME
-#
-progname = "run_tests_%s.elf" % mcu_target.lower()
-
-#
-# BUILD THE TEST RUNNER
-#
-target = env.Program(progname, sources, **ovrr)
+if sconscript_target == 'lib':
+    #
+    # SOURCES
+    #
+    sources = [ env.Glob('src/stm32xx/*.cpp'), env.Glob('src/stm32xx/*.c') ]
+    sources = Flatten(sources)
+    #
+    # LIBRARY NAME
+    #
+    libname = "stm32xx_%s" % mcu_target.lower()
+    #
+    # BUILD THE LIBRARY
+    #
+    target = env.Library(libname, sources, **ovrr)
+elif sconscript_target == 'unit-test':
+    #
+    # SOURCES
+    #
+    subdirs = ['src', 'tpl']
+    sources = [ env.File('test/unit/run_tests.cpp'),
+                env.Glob('test/unit/stm32xx/*_test.cpp') ]
+    sources = Flatten(sources)
+    #
+    # TEST RUNNER NAME
+    #
+    progname = "run_tests" 
+    #
+    # BUILD THE TEST RUNNER
+    #
+    # FIXME: this shouldn't be hardcoded; also this should be arm compiler
+    #        and we should have the unit-tests compiled for and run on 
+    #        target boards
+    ovrr2 = ovrr.copy()
+    ovrr2['LIBS'] += ['CppUTest']
+    ovrr2.update({
+        'CXX'  : 'g++',
+        'CC'   : 'gcc',
+        'LINK' : 'g++',
+        'AR'   : 'ar',
+    })
+    target = env.Program(progname, sources, **ovrr2)
+else:
+    msg = 'Unsupported SCONSCRIPT_TARGET: %s' % sconscript_target
+    raise SCons.Errors.UserError(msg)
 
 #
 # SIDE EFFECTS
@@ -214,6 +252,7 @@ for tgt in target:
   p = tgt.get_path()
   if re.match(r'\.o$', p):
     env.SideEffect(re.sub(r'\.o$', '.o.lst', p), tgt)
+
 
 #
 # RETURN WHAT WAS BUILT

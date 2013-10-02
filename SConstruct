@@ -19,21 +19,130 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE
 
-EnsureSConsVersion(2,3)
+import os
 
-flags = [
-  '-Wall', 
-  '-Wextra', 
-  '-Werror',
-  '-Wa,-adhlns=\'${TARGET}.lst\'', 
-  '-fmessage-length=0',
-  '-funsigned-bitfields'
+tools = {
+  'ADDR2LINE'   : 'arm-none-eabi-addr2line',
+  'AR'          : 'arm-none-eabi-ar',
+  'AS'          : 'arm-none-eabi-gcc',
+  'CXXFILT'     : 'arm-none-eabi-c++filt',
+  'CPP'         : 'arm-none-eabi-cpp',
+  'CS'          : 'arm-none-eabi-cs',
+  'ELFEDIT'     : 'arm-none-eabi-elfedit',
+  'CXX'         : 'arm-none-eabi-g++',
+  'CC'          : 'arm-none-eabi-gcc',
+  'GCC_AR'      : 'arm-none-eabi-gcc-ar',
+  'GCC_NM'      : 'arm-none-eabi-gcc-nm',
+  'GCC_RANLIB'  : 'arm-none-eabi-gcc-ranlib',
+  'GCOV'        : 'arm-none-eabi-gcov',
+  'GDB'         : 'arm-none-eabi-gdb',
+  'GPROF'       : 'arm-none-eabi-gprof',
+  'LINK'        : 'arm-none-eabi-ld',
+  'NM'          : 'arm-none-eabi-nm',
+  'OBJCOPY'     : 'arm-none-eabi-objcopy',
+  'OBJDUMP'     : 'arm-none-eabi-objdump',
+  'RANLIB'      : 'arm-none-eabi-ranlib',
+  'READELF'     : 'arm-none-eabi-readelf',
+  'SIZE'        : 'arm-none-eabi-size',
+  'STRINGS'     : 'arm-none-eabi-strings',
+  'STRIP'       : 'arm-none-eabi-strip',
+}
+
+#
+# COMMON COMPILATION FLAGS
+#
+common_flags = [
+    '-g',
+    '-Wall', 
+    '-Wextra', 
+    '-Werror',
+    '-fmessage-length=0',
+    '-funsigned-bitfields'
 ]
 
-env = Environment(tools =  ['default', 'doxygen', 'textfile'])
-env.Append(CFLAGS   = flags)
-env.Append(CXXFLAGS = ['-std=c++11', '-fno-exceptions', '-fno-rtti'] + flags)
+#
+# ASFLAGS
+#
+asflags   = ['-x', 'assembler-with-cpp']
+#
+# CFLAGS
+#
+cflags    = []
+#
+# CXXFLAGS
+#
+cxxflags  = ['-fno-exceptions', '-fno-rtti']
+#
+# LINKFLAGS
+#
+linkflags = []
 
+#
+# ALL THE FLAGS TOGETHER
+#
+kwargs = tools.copy()
+kwargs.update( ASFLAGS   = common_flags + asflags,
+               CFLAGS    = common_flags + cflags,
+               CXXFLAGS  = common_flags + cxxflags,
+               LINKFLAGS = common_flags + linkflags )
+
+env = Environment(ENV=os.environ, tools=['default','doxygen','textfile'], **kwargs)
+
+mcu_targets = [
+
+    # STM32F10x
+    'STM32F10X_CL',
+    'STM32F10X_LD',
+    'STM32F10X_MD',
+    'STM32F10X_HD',
+    'STM32F10X_XL',
+    'STM32F10X_LD_VL',
+    'STM32F10X_MD_VL',
+    'STM32F10X_HD_VL',
+
+    # STM32F4xx
+    'STM32F4XX',
+    'STM32F40XX',
+    'STM32F427X',
+]
+
+stdperiph_basedir = '../../ST/StdPeriph'
+cmsis_basedir = '../..'
+for key, val in ARGLIST:
+  if key == 'CMSIS_BASEDIR':      cmsis_basedir = val
+  if key == 'STDPERIPH_BASEDIR':  stdperiph_basedir = val
+stdperiph_basedir = env.Dir(stdperiph_basedir)
+cmsis_basedir = env.Dir(cmsis_basedir)
+
+#############################################################################
+# The library
+#############################################################################
+for mcu_target in mcu_targets:
+    options = { 
+      'MCU_TARGET'        : mcu_target,
+      'CMSIS_BASEDIR'     : cmsis_basedir,
+      'STDPERIPH_BASEDIR' : stdperiph_basedir,
+    }
+    lib = env.SConscript( 'SConscript', 
+        variant_dir='build/%s' % mcu_target,
+        duplicate=0, exports=['env', 'options'] )
+
+#############################################################################
+# Unit tests
+#############################################################################
+for mcu_target in mcu_targets:
+    options = { 
+      'MCU_TARGET'        : mcu_target,
+      'CMSIS_BASEDIR'     : cmsis_basedir,
+      'STDPERIPH_BASEDIR' : stdperiph_basedir,
+      'SCONSCRIPT_TARGET' : 'unit-test'
+    }
+    target = env.SConscript('SConscript', 
+        variant_dir='build/test/unit/%s' % mcu_target,
+        duplicate=0, exports=['env', 'options'] )
+env.Ignore('build/test', 'build/test/unit')
+env.Clean('build/test', 'build/test/unit')
+env.Alias('unit-test', 'build/test/unit')
 
 #############################################################################
 # Doxygen documentation 
@@ -60,19 +169,19 @@ env.Ignore('build', 'build/doc')
 env.Clean('build', 'build/doc')
 env.Alias('api-doc', 'build/doc')
 
-#############################################################################
-# Compile unit tests
-#############################################################################
-env.SConscript('test/unit/SConscript',
-  variant_dir = 'build/test/unit',
-  exports     = {
-    'env'     : env,
-    'options' : {
-      'CPPPATH'   : ['#src']
-    }
-  },
-  duplicate   = 0
-)
-env.Ignore('build/test', 'build/test/unit')
-env.Clean('build/test', 'build/test/unit')
-env.Alias('unit-test', 'build/test/unit')
+##############################################################################
+## Compile unit tests
+##############################################################################
+#env.SConscript('test/unit/SConscript',
+#  variant_dir = 'build/test/unit',
+#  exports     = {
+#    'env'     : env,
+#    'options' : {
+#      'CPPPATH'   : ['#src']
+#    }
+#  },
+#  duplicate   = 0
+#)
+#env.Ignore('build/test', 'build/test/unit')
+#env.Clean('build/test', 'build/test/unit')
+#env.Alias('unit-test', 'build/test/unit')
