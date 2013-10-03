@@ -309,8 +309,8 @@ struct pin_conf
  * @brief Compute CNF bits for GPIOx_CRL register.
  *
  * This meta-function computes CNF bits that should be set in GPIOx_CRL
- * register in order to realize given GPIO mode (@c _mode) on a set of
- * prescribed GPIO pins (@c _pins).
+ * register in order to realize given GPIO mode (@c _mode) on precribed GPIO
+ * pins (@c _pins).
  *
  * @note This meta-function covers only pins @c 0 to @c 7. Pins @c 8 to @c 15
  *       are covered by @ref ct::crh_cnf_bits "crh_cnf_bits" meta-function.
@@ -349,8 +349,8 @@ struct crl_cnf_mask
  * @brief Compute CNF bits for GPIOx_CRH register.
  *
  * This meta-function computes CNF bits that should be set in GPIOx_CRL
- * register in order to realize given GPIO mode (@c _mode) on a set of
- * prescribed GPIO pins (@c _pins).
+ * register in order to realize given GPIO mode (@c _mode) on prescribed GPIO
+ * pins (@c _pins).
  *
  * @note This meta-function covers only pins @c 8 to @c 15. Pins @c 0 to @c 7 
  *       are covered by @ref ct::crl_cnf_bits "crl_cnf_bits" meta-function.
@@ -525,11 +525,14 @@ struct crh_mask
   constexpr static uint32_t value = detail::crh_mask(_pins);
 };
 
+/** // doc: gpio::ct::crh_mask {{{
+ * @todo Write documentation for crh_bits.
+ */ // }}}
 template <pins_t _pins, GPIOMode_TypeDef _mode,
           GPIOSpeed_TypeDef _speed=(GPIOSpeed_TypeDef)0>
 struct crl_masked
   : bits::ct::masked< crl_bits<_pins,_mode,_speed>::value,
-                      crl_mask<_pins,_mode,_speed>::value >
+                      crl_mask<_pins>::value >
 {
   static_assert(IS_GPIO_PIN(_pins), "invalid pin specifier");
   static_assert(IS_GPIO_MODE(_mode), "invalid mode specifier");
@@ -538,17 +541,37 @@ struct crl_masked
                 "invalid speed specifier for selected mode");
 };
 
+/** // doc: gpio::ct::crh_mask {{{
+ * @todo Write documentation for crh_bits.
+ */ // }}}
 template <pins_t _pins, GPIOMode_TypeDef _mode,
           GPIOSpeed_TypeDef _speed=(GPIOSpeed_TypeDef)0>
 struct crh_masked
   : bits::ct::masked< crh_bits<_pins,_mode,_speed>::value,
-                      crh_mask<_pins,_mode,_speed>::value >
+                      crh_mask<_pins>::value >
 {
   static_assert(IS_GPIO_PIN(_pins), "invalid pin specifier");
   static_assert(IS_GPIO_MODE(_mode), "invalid mode specifier");
   static_assert(   (((_mode&0x10) != 0) && IS_GPIO_SPEED(_speed)) /* Output */
                 || (((_mode&0x10) == 0) && (_speed == 0)),        /* Input */
                 "invalid speed specifier for selected mode");
+};
+
+/** // doc: gpio::ct::crh_mask {{{
+ * @todo Write documentation for crh_bits.
+ */ // }}}
+template <typename ... _conf>
+struct crl_mix
+  : bits::ct::mix<crl_masked<_conf::pins, _conf::mode, _conf::speed>...>
+{
+};
+
+/** // doc: gpio::ct::crh_mask {{{
+ * @todo Write documentation for crh_bits.
+ */ // }}}
+template <typename ... _conf> struct crh_mix
+  : bits::ct::mix<crh_masked<_conf::pins, _conf::mode, _conf::speed>...>
+{
 };
 
 } /* namespace ct */
