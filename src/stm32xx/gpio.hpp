@@ -1,16 +1,16 @@
 /*
  * Copyright (c) by Pawel Tomulik <ptomulik@meil.pw.edu.pl>
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation
  * the rights to use, copy, modify, merge, publish, distribute, sublicense,
  * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -21,8 +21,8 @@
  */
 
 /** // doc: stm32xx/gpio.hpp {{{
- * \file stm32xx/gpio.hpp
- * \todo Write documentation
+ * @file stm32xx/gpio.hpp
+ * @todo Write documentation
  */ // }}}
 #ifndef STM32XX_GPIO_HPP_INCLUDED
 #define STM32XX_GPIO_HPP_INCLUDED
@@ -58,7 +58,7 @@ namespace detail {
  * @endcode
  *
  * @todo Move usage example of crl_cnf_bits to examples.
- * 
+ *
  * @see ST RM0008 Reference manual (STM32F10x) for register definitions.
  */ // }}}
 constexpr uint32_t
@@ -272,7 +272,7 @@ crh_mask(pins_t pins)
 namespace stm32xx {
 namespace gpio {
 /** // doc: namespace ct {{{
- * Compile-time machinery supporting configuration of STM32 GPIOs 
+ * Compile-time machinery supporting configuration of STM32 GPIOs
  */ // }}}
 namespace ct {
 
@@ -291,7 +291,7 @@ namespace ct {
  * @todo Better documentation for gpio::ct::pin_conf
  *
  */ // }}}
-template <pins_t _pins, GPIOMode_TypeDef _mode, 
+template <pins_t _pins, GPIOMode_TypeDef _mode,
           GPIOSpeed_TypeDef _speed=(GPIOSpeed_TypeDef)0>
 struct pin_conf
 {
@@ -305,6 +305,21 @@ struct pin_conf
   constexpr static GPIOSpeed_TypeDef speed = _speed;
 };
 
+/** // doc: gpio::ct::gpio_pin_conf {{{
+ * @brief Configuration for GPIO pins.
+ *
+ * @todo Write documentation
+ *
+ */ // }}}
+template <GPIO_TypeDef* _gpio, pin_t _pins, GPIOMode_TypeDef _mode,
+          GPIOSpeed_TypeDef _speed=(GPIOSpeed_TypeDef)0>
+struct gpio_pin_conf
+  : public pin_conf<_pins,_mode,_speed>
+{
+  static_assert(IS_GPIO_ALL_PERIPH(_gpio), "invalid GPIO address");
+  constexpr static GPIO_TypeDef* gpio = _gpio;
+};
+
 /** // doc: gpio::ct::crl_cnf_bits {{{
  * @brief Compute CNF bits for GPIOx_CRL register.
  *
@@ -316,7 +331,7 @@ struct pin_conf
  *       are covered by @ref ct::crh_cnf_bits "crh_cnf_bits" meta-function.
  * @note This meta-function should be used together with
  *       @ref ct::crl_cnf_mask "crl_cnf_mask".
- * 
+ *
  * @todo Prepare example for crl_cnf_bits.
  *
  * @see ST RM0008 Reference manual (STM32F10x) for register definitions.
@@ -352,7 +367,7 @@ struct crl_cnf_mask
  * register in order to realize given GPIO mode (@c _mode) on prescribed GPIO
  * pins (@c _pins).
  *
- * @note This meta-function covers only pins @c 8 to @c 15. Pins @c 0 to @c 7 
+ * @note This meta-function covers only pins @c 8 to @c 15. Pins @c 0 to @c 7
  *       are covered by @ref ct::crl_cnf_bits "crl_cnf_bits" meta-function.
  * @note This meta-function should be used together with
  *       @ref ct::crh_cnf_mask "crh_cnh_mask".
@@ -569,7 +584,8 @@ struct crl_mix
 /** // doc: gpio::ct::crh_mask {{{
  * @todo Write documentation for crh_bits.
  */ // }}}
-template <typename ... _conf> struct crh_mix
+template <typename ... _conf>
+struct crh_mix
   : bits::ct::mix<crh_masked<_conf::pins, _conf::mode, _conf::speed>...>
 {
 };

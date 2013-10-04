@@ -21,8 +21,8 @@
  */
 
 /** // doc: stm32xx/check.h {{{
- * \file stm32xx/check.h
- * \todo Write documentation
+ * @file stm32xx/check.h
+ * @todo Write documentation
  */ // }}}
 #ifndef STM23XX_CHECK_H_INCLUDED
 #define STM23XX_CHECK_H_INCLUDED

@@ -21,8 +21,8 @@
  */
 
 /** // doc: stm32xx/core_cmx.h {{{
- * \file stm32xx/core_cmx.h
- * \todo Write documentation
+ * @file stm32xx/core_cmx.h
+ * @todo Write documentation
  */ // }}}
 #ifndef STM32XX_CORE_CMX_H_INCLUDED
 #define STM32XX_CORE_CMX_H_INCLUDED

@@ -21,8 +21,8 @@
  */
 
 /** // doc: stm32xx/stm32fxxx.h {{{
- * \file stm32xx/stm32fxxx.h
- * \todo Write documentation
+ * @file stm32xx/stm32fxxx.h
+ * @todo Write documentation
  */ // }}}
 #ifndef STM32XX_STM32FXXX_H_INCLUDED
 #define STM32XX_STM32FXXX_H_INCLUDED
