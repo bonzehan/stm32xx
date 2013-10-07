@@ -51,9 +51,9 @@ mcu_targets = [
     'STM32F10X_HD_VL',
 
     # STM32F4xx
-    'STM32F4XX',
-    'STM32F40XX',
-    'STM32F427X',
+#    'STM32F4XX',
+#    'STM32F40XX',
+#    'STM32F427X',
 ]
 
 #

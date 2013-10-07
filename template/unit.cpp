@@ -21,8 +21,8 @@
  */
 
 /** // doc: unit.cpp {{{
- * \file unit.cpp
- * \todo Write documentation
+ * @file unit.cpp
+ * @todo Write documentation
  */ // }}}
 #include <unit.hpp>
 

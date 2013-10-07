@@ -832,4 +832,15 @@ TEST(stm32xx__gpio__ct, crl_mix__with_2_args)
   CHECK_EQUAL(mask1|mask2, (get_mask<crl_mix<arg1,arg2> >::value));
 };
 
+TEST(stm32xx__gpio__ct, configure_gpio__1)
+{
+  using namespace stm32xx::gpio::ct;
+  typedef gpio_conf<
+    pin_conf<GPIO_Pin_0 | GPIO_Pin_4, GPIO_Mode_Out_PP, GPIO_Speed_10MHz>
+  , pin_conf<GPIO_Pin_1, GPIO_Mode_AIN> 
+  >  my_gpio_conf;
+  /* FIXME: don't touch hardware (GPIOA)! */
+  set<my_gpio_conf>::in(GPIOA);
+}
+
 #endif /* _HAVE_GPIO_CRL_REGISTER */

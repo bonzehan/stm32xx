@@ -276,6 +276,33 @@ namespace gpio {
  */ // }}}
 namespace ct {
 
+template <pins_t _pins>
+struct assert_pins
+{
+  static_assert(IS_GPIO_PIN(_pins), "invalid pin specifier");
+};
+
+template <GPIOMode_TypeDef _mode>
+struct assert_mode
+{
+  static_assert(IS_GPIO_MODE(_mode), "invalid mode specifier");
+};
+
+template <GPIOSpeed_TypeDef _speed>
+struct assert_speed
+{
+  static_assert((_speed==0)||IS_GPIO_SPEED(_speed), "invalid speed specifier");
+};
+
+template <GPIOMode_TypeDef _mode, GPIOSpeed_TypeDef _speed>
+struct assert_mode_speed
+  : assert_mode<_mode>
+{
+  static_assert(   (((_mode&0x10) != 0) && IS_GPIO_SPEED(_speed)) /* Output */
+                || (((_mode&0x10) == 0) && (_speed == 0)),        /* Input */
+                "invalid speed specifier for selected mode");
+};
+
 /** // doc: gpio::ct::pin_conf {{{
  * @brief Configuration for GPIO pins.
  *
@@ -288,27 +315,32 @@ namespace ct {
  * using led_conf = pin_conf<GPIO_Pin_0, GPIO_Mode_Out_PP, GPIO_Speed_10MHz>
  * @endcode
  *
- * @todo Better documentation for gpio::ct::pin_conf
+ * @todo Write better documentation for gpio::ct::pin_conf
  *
  */ // }}}
 template <pins_t _pins, GPIOMode_TypeDef _mode,
           GPIOSpeed_TypeDef _speed=(GPIOSpeed_TypeDef)0>
 struct pin_conf
+  : assert_pins<_pins>, assert_mode_speed<_mode,_speed>
 {
-  static_assert(IS_GPIO_PIN(_pins), "invalid pin specifier");
-  static_assert(IS_GPIO_MODE(_mode), "invalid mode specifier");
-  static_assert(   (((_mode&0x10) != 0) && IS_GPIO_SPEED(_speed)) /* Output */
-                || (((_mode&0x10) == 0) && (_speed == 0)),        /* Input */
-                "invalid speed specifier for selected mode");
   constexpr static pins_t pins = _pins;
   constexpr static GPIOMode_TypeDef mode = _mode;
   constexpr static GPIOSpeed_TypeDef speed = _speed;
 };
 
+#if 0 
+/* NOTE: we need MPL-like meta-sequences and meta-algorithms (at least copy_if)
+ * for the following struct to have sense (to make it usefull). */
 /** // doc: gpio::ct::gpio_pin_conf {{{
  * @brief Configuration for GPIO pins.
  *
- * @todo Write documentation
+ * <b>Usage Example</b>:
+ * @code
+ * using namespace stm32xx::gpio::ct;
+ * using led = gpio_conf<GPIOA,GPIO_Pin_1,GPIO_Mode_Out_PP,GPIO_Speed_10MHz>;
+ * @endcode
+ *
+ * @todo Write documentation for gpio::ct::gpio_pin_conf
  *
  */ // }}}
 template <GPIO_TypeDef* _gpio, pin_t _pins, GPIOMode_TypeDef _mode,
@@ -318,6 +350,17 @@ struct gpio_pin_conf
 {
   static_assert(IS_GPIO_ALL_PERIPH(_gpio), "invalid GPIO address");
   constexpr static GPIO_TypeDef* gpio = _gpio;
+};
+#endif
+
+/** // doc: gpio::ct::gpio_conf {{{
+ * @todo Write documentation for gpio::ct::gpio_conf
+ */ // }}}
+template <typename ... _pin_conf>
+struct gpio_conf
+{
+  //constexpr static GPIO_TypeDef* gpio = _gpio;
+  //typedef ::stm32xx::ct::type_pack<_pin_conf...> pin_conf;
 };
 
 /** // doc: gpio::ct::crl_cnf_bits {{{
@@ -338,9 +381,8 @@ struct gpio_pin_conf
  */ // }}}
 template <pins_t _pins, GPIOMode_TypeDef _mode>
 struct crl_cnf_bits
+  : assert_pins<_pins>, assert_mode<_mode>
 {
-  static_assert(IS_GPIO_PIN(_pins), "invalid pin specifier");
-  static_assert(IS_GPIO_MODE(_mode), "invalid mode specifier");
   constexpr static uint32_t value = detail::crl_cnf_bits(_pins, _mode);
 };
 
@@ -355,8 +397,8 @@ struct crl_cnf_bits
  */ // }}}
 template <pins_t _pins>
 struct crl_cnf_mask
+  : assert_pins<_pins>
 {
-  static_assert(IS_GPIO_PIN(_pins), "invalid pin specifier");
   constexpr static uint32_t value = detail::crl_cnf_mask(_pins);
 };
 
@@ -378,9 +420,8 @@ struct crl_cnf_mask
  */ // }}}
 template <pins_t _pins, GPIOMode_TypeDef _mode>
 struct crh_cnf_bits
+  : assert_pins<_pins>, assert_mode<_mode>
 {
-  static_assert(IS_GPIO_PIN(_pins), "invalid pin specifier");
-  static_assert(IS_GPIO_MODE(_mode), "invalid mode specifier");
   constexpr static uint32_t value = detail::crh_cnf_bits(_pins, _mode);
 };
 
@@ -395,8 +436,8 @@ struct crh_cnf_bits
  */ // }}}
 template <pins_t _pins>
 struct crh_cnf_mask
+  : assert_pins<_pins>
 {
-  static_assert(IS_GPIO_PIN(_pins), "invalid pin specifier");
   constexpr static uint32_t value = detail::crh_cnf_mask(_pins);
 };
 
@@ -414,9 +455,8 @@ struct crh_cnf_mask
  */ // }}}
 template <pins_t _pins, GPIOSpeed_TypeDef _speed>
 struct crl_mode_bits
+  : assert_pins<_pins>, assert_speed<_speed>
 {
-  static_assert(IS_GPIO_PIN(_pins), "invalid pin specifier");
-  static_assert((_speed==0)||IS_GPIO_SPEED(_speed), "invalid speed specifier");
   constexpr static uint32_t value = detail::crl_mode_bits(_pins, _speed);
 };
 
@@ -431,8 +471,8 @@ struct crl_mode_bits
  */ // }}}
 template <pins_t _pins>
 struct crl_mode_mask
+  : assert_pins<_pins>
 {
-  static_assert(IS_GPIO_PIN(_pins), "invalid pin specifier");
   constexpr static uint32_t value = detail::crl_mode_mask(_pins);
 };
 
@@ -450,9 +490,8 @@ struct crl_mode_mask
  */ // }}}
 template <pins_t _pins, GPIOSpeed_TypeDef _speed>
 struct crh_mode_bits
+  : assert_pins<_pins>, assert_speed<_speed>
 {
-  static_assert(IS_GPIO_PIN(_pins), "invalid pin specifier");
-  static_assert((_speed==0)||IS_GPIO_SPEED(_speed), "invalid speed specifier");
   constexpr static uint32_t value = detail::crh_mode_bits(_pins, _speed);
 };
 
@@ -467,8 +506,8 @@ struct crh_mode_bits
  */ // }}}
 template <pins_t _pins>
 struct crh_mode_mask
+  : assert_pins<_pins>
 {
-  static_assert(IS_GPIO_PIN(_pins), "invalid pin specifier");
   constexpr static uint32_t value = detail::crh_mode_mask(_pins);
 };
 
@@ -487,12 +526,8 @@ struct crh_mode_mask
 template <pins_t _pins, GPIOMode_TypeDef _mode,
           GPIOSpeed_TypeDef _speed=(GPIOSpeed_TypeDef)0>
 struct crl_bits
+  : assert_pins<_pins>, assert_mode_speed<_mode, _speed>
 {
-  static_assert(IS_GPIO_PIN(_pins), "invalid pin specifier");
-  static_assert(IS_GPIO_MODE(_mode), "invalid mode specifier");
-  static_assert(   (((_mode&0x10) != 0) && IS_GPIO_SPEED(_speed)) /* Output */
-                || (((_mode&0x10) == 0) && (_speed == 0)),        /* Input */
-                "invalid speed specifier for selected mode");
   constexpr static uint32_t value = detail::crl_bits(_pins,_mode,_speed);
 };
 
@@ -501,8 +536,8 @@ struct crl_bits
  */ // }}}
 template <pins_t _pins>
 struct crl_mask
+  : assert_pins<_pins>
 {
-  static_assert(IS_GPIO_PIN(_pins), "invalid pin specifier");
   constexpr static uint32_t value = detail::crl_mask(_pins);
 };
 
@@ -521,12 +556,8 @@ struct crl_mask
 template <pins_t _pins, GPIOMode_TypeDef _mode,
           GPIOSpeed_TypeDef _speed=(GPIOSpeed_TypeDef)0>
 struct crh_bits
+  : assert_pins<_pins>, assert_mode_speed<_mode, _speed>
 {
-  static_assert(IS_GPIO_PIN(_pins), "invalid pin specifier");
-  static_assert(IS_GPIO_MODE(_mode), "invalid mode specifier");
-  static_assert(   (((_mode&0x10) != 0) && IS_GPIO_SPEED(_speed)) /* Output */
-                || (((_mode&0x10) == 0) && (_speed == 0)),        /* Input */
-                "invalid speed specifier for selected mode");
   constexpr static uint32_t value = detail::crh_bits(_pins,_mode,_speed);
 };
 
@@ -535,8 +566,8 @@ struct crh_bits
  */ // }}}
 template <pins_t _pins>
 struct crh_mask
+  : assert_pins<_pins>
 {
-  static_assert(IS_GPIO_PIN(_pins), "invalid pin specifier");
   constexpr static uint32_t value = detail::crh_mask(_pins);
 };
 
@@ -546,14 +577,10 @@ struct crh_mask
 template <pins_t _pins, GPIOMode_TypeDef _mode,
           GPIOSpeed_TypeDef _speed=(GPIOSpeed_TypeDef)0>
 struct crl_masked
-  : bits::ct::masked< crl_bits<_pins,_mode,_speed>::value,
+  : assert_pins<_pins>, assert_mode_speed<_mode,_speed>,
+    bits::ct::masked< crl_bits<_pins,_mode,_speed>::value,
                       crl_mask<_pins>::value >
 {
-  static_assert(IS_GPIO_PIN(_pins), "invalid pin specifier");
-  static_assert(IS_GPIO_MODE(_mode), "invalid mode specifier");
-  static_assert(   (((_mode&0x10) != 0) && IS_GPIO_SPEED(_speed)) /* Output */
-                || (((_mode&0x10) == 0) && (_speed == 0)),        /* Input */
-                "invalid speed specifier for selected mode");
 };
 
 /** // doc: gpio::ct::crh_mask {{{
@@ -562,14 +589,10 @@ struct crl_masked
 template <pins_t _pins, GPIOMode_TypeDef _mode,
           GPIOSpeed_TypeDef _speed=(GPIOSpeed_TypeDef)0>
 struct crh_masked
-  : bits::ct::masked< crh_bits<_pins,_mode,_speed>::value,
+  : assert_pins<_pins>, assert_mode_speed<_mode,_speed>,
+    bits::ct::masked< crh_bits<_pins,_mode,_speed>::value,
                       crh_mask<_pins>::value >
 {
-  static_assert(IS_GPIO_PIN(_pins), "invalid pin specifier");
-  static_assert(IS_GPIO_MODE(_mode), "invalid mode specifier");
-  static_assert(   (((_mode&0x10) != 0) && IS_GPIO_SPEED(_speed)) /* Output */
-                || (((_mode&0x10) == 0) && (_speed == 0)),        /* Input */
-                "invalid speed specifier for selected mode");
 };
 
 /** // doc: gpio::ct::crh_mask {{{
@@ -588,6 +611,22 @@ template <typename ... _conf>
 struct crh_mix
   : bits::ct::mix<crh_masked<_conf::pins, _conf::mode, _conf::speed>...>
 {
+};
+
+template <typename> struct set;
+template <typename ... _pin_conf>
+struct set<gpio_conf<_pin_conf...> >
+{
+#if defined (STM32_FAMILY_STM32F10X)
+  static void in(GPIO_TypeDef* gpio)
+  {
+    /* TODO: check, if order doesn't matter */
+    bits::ct::modify<crl_mix<_pin_conf...> >::in(gpio->CRL);
+    bits::ct::modify<crh_mix<_pin_conf...> >::in(gpio->CRH);
+  }
+#else
+# error "Not implemented yet!"
+#endif
 };
 
 } /* namespace ct */

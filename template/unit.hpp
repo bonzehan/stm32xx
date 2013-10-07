@@ -23,8 +23,8 @@
 // unit.hpp
 
 /** // doc: unit.hpp {{{ 
- * \file unit.hpp
- * \todo Write documentation
+ * @file unit.hpp
+ * @todo Write documentation
  */ // }}}
 #ifndef UNIT_HPP_INCLUDED
 #define UNIT_HPP_INCLUDED
