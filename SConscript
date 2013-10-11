@@ -29,12 +29,12 @@ import re
 import SCons.Errors
 
 local_opts =  [ 
-  'CMSIS_BASEDIR',
-  'MCU_CORE',
-  'MCU_FAMILY',
-  'MCU_TARGET',
-  'SCONSCRIPT_TARGET',
-  'STDPERIPH_BASEDIR',
+    'CMSIS_BASEDIR',
+    'MCU_CORE',
+    'MCU_FAMILY',
+    'MCU_TARGET',
+    'SCONSCRIPT_TARGET',
+    'STDPERIPH_BASEDIR',
 ]
 
 # 
@@ -220,7 +220,9 @@ elif sconscript_target == 'unit-test':
     #
     subdirs = ['src', 'tpl']
     sources = [ env.File('test/unit/run_tests.cpp'),
-                env.Glob('test/unit/stm32xx/*_test.cpp') ]
+                env.Glob('test/unit/stm32xx/*_test.cpp'),
+                env.Glob('src/stm32xx/*.cpp'),
+                env.Glob('src/stm32xx/*.c') ]
     sources = Flatten(sources)
     #
     # TEST RUNNER NAME

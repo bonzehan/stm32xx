@@ -1,3 +1,29 @@
+/*
+ * Copyright (c) 2013 by Pawel Tomulik <ptomulik@meil.pw.edu.pl>
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE
+ */
+
+/** // doc: test/unit/stm32xx/gpio_test.cpp {{{
+ * @file test/unit/stm32xx/gpio_test.cpp
+ * @todo Write documentation
+ */ // }}}
 #include <stm32xx/gpio.hpp>
 #include <CppUTest/TestHarness.h>
 
@@ -832,15 +858,100 @@ TEST(stm32xx__gpio__ct, crl_mix__with_2_args)
   CHECK_EQUAL(mask1|mask2, (get_mask<crl_mix<arg1,arg2> >::value));
 };
 
+#ifdef STM32_FAMILY_STM32F10X
 TEST(stm32xx__gpio__ct, configure_gpio__1)
 {
+  GPIO_TypeDef gpiox = {
+    /* Reset values */
+    0x44444444ul,     /* CRL */
+    0x44444444ul,     /* CRH */
+    0x00000000ul,     /* IDR */
+    0x00000000ul,     /* ODR */
+    0x00000000ul,     /* BSRR */
+    0x00000000ul,     /* BRR */
+    0x00000000ul      /* LCKR */
+  };
   using namespace stm32xx::gpio::ct;
+
   typedef gpio_conf<
     pin_conf<GPIO_Pin_0 | GPIO_Pin_4, GPIO_Mode_Out_PP, GPIO_Speed_10MHz>
   , pin_conf<GPIO_Pin_1, GPIO_Mode_AIN> 
   >  my_gpio_conf;
-  /* FIXME: don't touch hardware (GPIOA)! */
-  set<my_gpio_conf>::in(GPIOA);
+
+  set<my_gpio_conf>::in(&gpiox);
+
+  CHECK_EQUAL(0x44414401ul, gpiox.CRL);
+  CHECK_EQUAL(0x44444444ul, gpiox.CRH);
+  CHECK_EQUAL(0x00000000ul, gpiox.IDR);
+  CHECK_EQUAL(0x00000000ul, gpiox.ODR);
+  CHECK_EQUAL(0x00000000ul, gpiox.BSRR);
+  CHECK_EQUAL(0x00000000ul, gpiox.BRR);
+  CHECK_EQUAL(0x00000000ul, gpiox.LCKR);
 }
+TEST(stm32xx__gpio__ct, configure_gpio__2)
+{
+  GPIO_TypeDef gpiox = {
+    /* Reset values */
+    0x44444444ul,     /* CRL */
+    0x44444444ul,     /* CRH */
+    0x00000000ul,     /* IDR */
+    0x00000000ul,     /* ODR */
+    0x00000000ul,     /* BSRR */
+    0x00000000ul,     /* BRR */
+    0x00000000ul      /* LCKR */
+  };
+  using namespace stm32xx::gpio::ct;
+
+  typedef gpio_conf<
+    pin_conf<GPIO_Pin_8 | GPIO_Pin_12, GPIO_Mode_Out_PP, GPIO_Speed_10MHz>
+  , pin_conf<GPIO_Pin_9, GPIO_Mode_AIN> 
+  >  my_gpio_conf;
+
+  set<my_gpio_conf>::in(&gpiox);
+
+  CHECK_EQUAL(0x44444444ul, gpiox.CRL);
+  CHECK_EQUAL(0x44414401ul, gpiox.CRH);
+  CHECK_EQUAL(0x00000000ul, gpiox.IDR);
+  CHECK_EQUAL(0x00000000ul, gpiox.ODR);
+  CHECK_EQUAL(0x00000000ul, gpiox.BSRR);
+  CHECK_EQUAL(0x00000000ul, gpiox.BRR);
+  CHECK_EQUAL(0x00000000ul, gpiox.LCKR);
+}
+TEST(stm32xx__gpio__ct, configure_gpio__3)
+{
+  GPIO_TypeDef gpiox = {
+    /* Reset values */
+    0x44444444ul,     /* CRL */
+    0x44444444ul,     /* CRH */
+    0x00000000ul,     /* IDR */
+    0x00000000ul,     /* ODR */
+    0x00000000ul,     /* BSRR */
+    0x00000000ul,     /* BRR */
+    0x00000000ul      /* LCKR */
+  };
+  using namespace stm32xx::gpio::ct;
+
+  typedef gpio_conf<
+    pin_conf<GPIO_Pin_0 | GPIO_Pin_4, GPIO_Mode_Out_PP, GPIO_Speed_10MHz>
+  , pin_conf<GPIO_Pin_1, GPIO_Mode_AIN> 
+  , pin_conf<GPIO_Pin_8 | GPIO_Pin_12, GPIO_Mode_Out_PP, GPIO_Speed_10MHz>
+  , pin_conf<GPIO_Pin_9, GPIO_Mode_AIN> 
+  >  my_gpio_conf;
+
+  set<my_gpio_conf>::in(&gpiox);
+
+  CHECK_EQUAL(0x44414401ul, gpiox.CRL);
+  CHECK_EQUAL(0x44414401ul, gpiox.CRH);
+  CHECK_EQUAL(0x00000000ul, gpiox.IDR);
+  CHECK_EQUAL(0x00000000ul, gpiox.ODR);
+  CHECK_EQUAL(0x00000000ul, gpiox.BSRR);
+  CHECK_EQUAL(0x00000000ul, gpiox.BRR);
+  CHECK_EQUAL(0x00000000ul, gpiox.LCKR);
+}
+#else
+# error "Not implemented yet!"
+#endif
 
 #endif /* _HAVE_GPIO_CRL_REGISTER */
+// vim: set expandtab tabstop=2 shiftwidth=2:
+// vim: set foldmethod=marker foldcolumn=4:

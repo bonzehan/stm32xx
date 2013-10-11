@@ -22,30 +22,30 @@
 import os
 
 tools = {
-  'ADDR2LINE'   : 'arm-none-eabi-addr2line',
-  'AR'          : 'arm-none-eabi-ar',
-  'AS'          : 'arm-none-eabi-gcc',
-  'CXXFILT'     : 'arm-none-eabi-c++filt',
-  'CPP'         : 'arm-none-eabi-cpp',
-  'CS'          : 'arm-none-eabi-cs',
-  'ELFEDIT'     : 'arm-none-eabi-elfedit',
-  'CXX'         : 'arm-none-eabi-g++',
-  'CC'          : 'arm-none-eabi-gcc',
-  'GCC_AR'      : 'arm-none-eabi-gcc-ar',
-  'GCC_NM'      : 'arm-none-eabi-gcc-nm',
-  'GCC_RANLIB'  : 'arm-none-eabi-gcc-ranlib',
-  'GCOV'        : 'arm-none-eabi-gcov',
-  'GDB'         : 'arm-none-eabi-gdb',
-  'GPROF'       : 'arm-none-eabi-gprof',
-  'LINK'        : 'arm-none-eabi-ld',
-  'NM'          : 'arm-none-eabi-nm',
-  'OBJCOPY'     : 'arm-none-eabi-objcopy',
-  'OBJDUMP'     : 'arm-none-eabi-objdump',
-  'RANLIB'      : 'arm-none-eabi-ranlib',
-  'READELF'     : 'arm-none-eabi-readelf',
-  'SIZE'        : 'arm-none-eabi-size',
-  'STRINGS'     : 'arm-none-eabi-strings',
-  'STRIP'       : 'arm-none-eabi-strip',
+    'ADDR2LINE'   : 'arm-none-eabi-addr2line',
+    'AR'          : 'arm-none-eabi-ar',
+    'AS'          : 'arm-none-eabi-gcc',
+    'CXXFILT'     : 'arm-none-eabi-c++filt',
+    'CPP'         : 'arm-none-eabi-cpp',
+    'CS'          : 'arm-none-eabi-cs',
+    'ELFEDIT'     : 'arm-none-eabi-elfedit',
+    'CXX'         : 'arm-none-eabi-g++',
+    'CC'          : 'arm-none-eabi-gcc',
+    'GCC_AR'      : 'arm-none-eabi-gcc-ar',
+    'GCC_NM'      : 'arm-none-eabi-gcc-nm',
+    'GCC_RANLIB'  : 'arm-none-eabi-gcc-ranlib',
+    'GCOV'        : 'arm-none-eabi-gcov',
+    'GDB'         : 'arm-none-eabi-gdb',
+    'GPROF'       : 'arm-none-eabi-gprof',
+    'LINK'        : 'arm-none-eabi-ld',
+    'NM'          : 'arm-none-eabi-nm',
+    'OBJCOPY'     : 'arm-none-eabi-objcopy',
+    'OBJDUMP'     : 'arm-none-eabi-objdump',
+    'RANLIB'      : 'arm-none-eabi-ranlib',
+    'READELF'     : 'arm-none-eabi-readelf',
+    'SIZE'        : 'arm-none-eabi-size',
+    'STRINGS'     : 'arm-none-eabi-strings',
+    'STRIP'       : 'arm-none-eabi-strip',
 }
 
 #
@@ -53,6 +53,7 @@ tools = {
 #
 common_flags = [
     '-g',
+    '-Os',
     '-Wall', 
     '-Wextra', 
     '-Werror',
@@ -119,12 +120,12 @@ cmsis_basedir = env.Dir(cmsis_basedir)
 #############################################################################
 for mcu_target in mcu_targets:
     options = { 
-      'MCU_TARGET'        : mcu_target,
-      'CMSIS_BASEDIR'     : cmsis_basedir,
-      'STDPERIPH_BASEDIR' : stdperiph_basedir,
+        'MCU_TARGET'        : mcu_target,
+        'CMSIS_BASEDIR'     : cmsis_basedir,
+        'STDPERIPH_BASEDIR' : stdperiph_basedir,
     }
     lib = env.SConscript( 'SConscript', 
-        variant_dir='build/%s' % mcu_target,
+        variant_dir='build/%s' % mcu_target.lower(),
         duplicate=0, exports=['env', 'options'] )
 
 #############################################################################
@@ -138,7 +139,7 @@ for mcu_target in mcu_targets:
       'SCONSCRIPT_TARGET' : 'unit-test'
     }
     target = env.SConscript('SConscript', 
-        variant_dir='build/test/unit/%s' % mcu_target,
+        variant_dir='build/test/unit/%s' % mcu_target.lower(),
         duplicate=0, exports=['env', 'options'] )
 env.Ignore('build/test', 'build/test/unit')
 env.Clean('build/test', 'build/test/unit')
@@ -149,20 +150,21 @@ env.Alias('unit-test', 'build/test/unit')
 #############################################################################
 # FIXME: on Windows we need doxycppfilter.bat or something as such.
 doxygen_options = {
-  'CPP_FILTER'            : '#bin/doxycppfilter',
-  'SRCDIR'                : '#src',
-  'PROJECT_NAME'          : 'STM32++',
-  'PROJECT_BRIEF'         : 'C++ utility library for STM32 firmware developers',
-  'RECURSIVE'             : 'YES',
-  'HIDE_UNDOC_CLASSES'    : 'YES',
-  'HIDE_UNDOC_MEMBERS'    : 'YES',
-  'WARN_IF_UNDOCUMENTED'  : 'NO',
+    'CPP_FILTER'            : '#bin/doxycppfilter',
+    'FILTER_SOURCE_FILES'   : 'YES',
+    'SRCDIR'                : '#src',
+    'PROJECT_NAME'          : 'STM32++',
+    'PROJECT_BRIEF'         : 'C++ utility library for STM32 firmware developers',
+    'RECURSIVE'             : 'YES',
+    'HIDE_UNDOC_CLASSES'    : 'YES',
+    'HIDE_UNDOC_MEMBERS'    : 'YES',
+    'WARN_IF_UNDOCUMENTED'  : 'NO',
 }
 
 env.SConscript('doc/SConscript',
-  variant_dir = 'build/doc',
-  exports     = {'env' : env, 'options' : doxygen_options}, 
-  duplicate   = 0
+    variant_dir = 'build/doc',
+    exports     = {'env' : env, 'options' : doxygen_options}, 
+    duplicate   = 0
 )
 
 env.Ignore('build', 'build/doc')
@@ -185,3 +187,9 @@ env.Alias('api-doc', 'build/doc')
 #env.Ignore('build/test', 'build/test/unit')
 #env.Clean('build/test', 'build/test/unit')
 #env.Alias('unit-test', 'build/test/unit')
+
+# Local Variables:
+# # tab-width:4
+# # indent-tabs-mode:nil
+# # End:
+# vim: set syntax=scons expandtab tabstop=4 shiftwidth=4:
