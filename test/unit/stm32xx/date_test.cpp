@@ -38,9 +38,9 @@ TEST(stm32xx__date, date)
 {
   using namespace stm32xx;
   date d;
-  CHECK_EQUAL(STM32XX_DATE_YEAR_MIN, d.year());
-  CHECK_EQUAL(1, d.mon());
-  CHECK_EQUAL(1, d.mday());
+  CHECK_EQUAL(STM32XX_DATE_DEFAULT_YEAR, d.year());
+  CHECK_EQUAL(STM32XX_DATE_DEFAULT_MON, d.mon());
+  CHECK_EQUAL(STM32XX_DATE_DEFAULT_MDAY, d.mday());
 };
 
 TEST(stm32xx__date, date__year__mon__mday)
@@ -85,6 +85,18 @@ TEST_mdays(2012, 2, 29);
 TEST_mdays(2100, 2, 28);
 TEST_mdays(2400, 2, 29);
 
+#define TEST_gday(_y,_m,_d,_res) \
+  TEST(stm32xx__date, gday__ ## _y ## __ ## _m ## __ ## _d) \
+  { \
+    CHECK_EQUAL(_res, stm32xx::date::gday(_y,_m,_d)); \
+  }
+
+TEST_gday(1582, 10, 15,      1);
+TEST_gday(2013, 10, 12, 157418);
+TEST_gday(2013, 12, 31, 157498);
+TEST_gday(2100,  3,  1, 188969);
+TEST_gday(2400,  2, 29, 298541);
+
 #define TEST_yday(_y,_m,_d,_res) \
   TEST(stm32xx__date, yday__ ## _y ## __ ## _m ## __ ## _d) \
   { \
@@ -103,7 +115,8 @@ TEST_yday(2400,12,31, 365);
 #define TEST_wday(_y,_m,_d,_res) \
   TEST(stm32xx__date, wday__ ## _y ## __ ## _m ## __ ## _d) \
   { \
-    CHECK_EQUAL(stm32xx::date::wday_ ## _res, stm32xx::date::wday(_y,_m,_d)); \
+    using namespace stm32xx; \
+    CHECK_EQUAL(date::wday_ ## _res, date::wday(date::gday(_y,_m,_d))); \
   }
 
 TEST_wday(2013, 1, 1, tue);
@@ -116,11 +129,12 @@ TEST_wday(2013, 4, 4, thu);
 TEST_wday(2013, 4, 5, fri);
 TEST_wday(2013, 4, 6, sat);
 TEST_wday(2013, 4, 7, sun);
+TEST_wday(2013,12,31, tue);
 TEST_wday(2100, 2,28, sun);
 TEST_wday(2400, 2,29, tue);
 
 #define TEST_clamp_year(_y,_res) \
-  TEST(stm32xx__date, correct_year__  ## _y) \
+  TEST(stm32xx__date, clamp_year__  ## _y) \
   { \
     CHECK_EQUAL(_res, stm32xx::date::clamp_year(_y)); \
   }
@@ -132,7 +146,7 @@ TEST_clamp_year(STM32XX_DATE_YEAR_MIN_minus_1, STM32XX_DATE_YEAR_MIN);
 TEST_clamp_year(STM32XX_DATE_YEAR_MAX_plus_1, STM32XX_DATE_YEAR_MAX);
 
 #define TEST_clamp_mon(_m,_res) \
-  TEST(stm32xx__date, correct_mon__  ## _m) \
+  TEST(stm32xx__date, clamp_mon__  ## _m) \
   { \
     CHECK_EQUAL(_res, stm32xx::date::clamp_mon(_m)); \
   }
@@ -144,7 +158,7 @@ TEST_clamp_mon( 0, 1);
 TEST_clamp_mon(13,12);
 
 #define TEST_clamp_mday(_y,_m,_d,_res) \
-  TEST(stm32xx__date, correct_mday__ ## _y ## __ ## _m ## __ ## _d) \
+  TEST(stm32xx__date, clamp_mday__ ## _y ## __ ## _m ## __ ## _d) \
   { \
     CHECK_EQUAL(_res, stm32xx::date::clamp_mday(_y,_m,_d)); \
   }
@@ -191,7 +205,7 @@ TEST_date_valid(2013, 4,31, false);
 TEST_date_valid(2100, 2,29, false);
 
 #define TEST_clamp_date(_y,_m,_d, _y2, _m2, _d2) \
-  TEST(stm32xx__date, correct__ ## _y ## __ ## _m ## __ ## _d) \
+  TEST(stm32xx__date, clamp__ ## _y ## __ ## _m ## __ ## _d) \
   { \
     stm32xx::date date(_y,_m,_d); \
     date.clamp_date(); \
@@ -201,10 +215,8 @@ TEST_date_valid(2100, 2,29, false);
   }
 
 TEST_clamp_date(2013,10, 9, 2013,10, 9);
-TEST_clamp_date(STM32XX_DATE_YEAR_MIN, 1, 1, STM32XX_DATE_YEAR_MIN, 1, 1);
 TEST_clamp_date(STM32XX_DATE_YEAR_MAX,12,31, STM32XX_DATE_YEAR_MAX,12,31);
 
-TEST_clamp_date(STM32XX_DATE_YEAR_MIN_minus_1, 1, 1, STM32XX_DATE_YEAR_MIN, 1, 1);
 TEST_clamp_date(STM32XX_DATE_YEAR_MAX_plus_1,12,31, STM32XX_DATE_YEAR_MAX,12,31);
 
 TEST_clamp_date(2013, 0, 1, 2013, 1, 1);
@@ -216,16 +228,29 @@ TEST_clamp_date(2013,11,32, 2013,11,30);
 TEST_clamp_date(2013, 2,29, 2013, 2,28);
 TEST_clamp_date(2012, 2,30, 2012, 2,29);
 
-TEST_clamp_date(STM32XX_DATE_YEAR_MIN_minus_1, 0, 1, STM32XX_DATE_YEAR_MIN, 1, 1);
-TEST_clamp_date(STM32XX_DATE_YEAR_MIN_minus_1,13, 1, STM32XX_DATE_YEAR_MIN,12, 1);
 TEST_clamp_date(STM32XX_DATE_YEAR_MAX_plus_1,  0, 1, STM32XX_DATE_YEAR_MAX, 1, 1);
 TEST_clamp_date(STM32XX_DATE_YEAR_MAX_plus_1, 13, 1, STM32XX_DATE_YEAR_MAX,12, 1);
+
+#if STM32XX_DATE_YEAR_MIN > 1582
+TEST_clamp_date(STM32XX_DATE_YEAR_MIN, 1, 1, STM32XX_DATE_YEAR_MIN, 1, 1);
+TEST_clamp_date(STM32XX_DATE_YEAR_MIN_minus_1, 1, 1, STM32XX_DATE_YEAR_MIN, 1, 1);
+TEST_clamp_date(STM32XX_DATE_YEAR_MIN_minus_1, 0, 1, STM32XX_DATE_YEAR_MIN, 1, 1);
+TEST_clamp_date(STM32XX_DATE_YEAR_MIN_minus_1,13, 1, STM32XX_DATE_YEAR_MIN,12, 1);
 TEST_clamp_date(STM32XX_DATE_YEAR_MIN_minus_1, 2,30, STM32XX_DATE_YEAR_MIN, 2, \
                 (stm32xx::date::leap_year(STM32XX_DATE_YEAR_MIN) ? 29 :28));
-TEST_clamp_date(STM32XX_DATE_YEAR_MAX_plus_1,  2,30, STM32XX_DATE_YEAR_MAX, 2, \
-                (stm32xx::date::leap_year(STM32XX_DATE_YEAR_MAX) ? 29 :28));
 TEST_clamp_date(STM32XX_DATE_YEAR_MIN_minus_1, 2,29, STM32XX_DATE_YEAR_MIN, 2, \
                 (stm32xx::date::leap_year(STM32XX_DATE_YEAR_MIN) ? 29 :28));
+#else
+TEST_clamp_date(STM32XX_DATE_YEAR_MIN,         1, 1, 1582, 10, 15);
+TEST_clamp_date(STM32XX_DATE_YEAR_MIN_minus_1, 1, 1, 1582, 10, 15);
+TEST_clamp_date(STM32XX_DATE_YEAR_MIN_minus_1, 0, 1, 1582, 10, 15);
+TEST_clamp_date(STM32XX_DATE_YEAR_MIN_minus_1,13, 1, 1582, 10, 15);
+TEST_clamp_date(STM32XX_DATE_YEAR_MIN_minus_1, 2,30, 1582, 10, 15);
+TEST_clamp_date(STM32XX_DATE_YEAR_MIN_minus_1, 2,29, 1582, 10, 15);
+#endif
+
+TEST_clamp_date(STM32XX_DATE_YEAR_MAX_plus_1,  2,30, STM32XX_DATE_YEAR_MAX, 2, \
+                (stm32xx::date::leap_year(STM32XX_DATE_YEAR_MAX) ? 29 :28));
 TEST_clamp_date(STM32XX_DATE_YEAR_MAX_plus_1,  2,29, STM32XX_DATE_YEAR_MAX, 2, \
                 (stm32xx::date::leap_year(STM32XX_DATE_YEAR_MAX) ? 29 :28));
 
@@ -320,7 +345,7 @@ TEST_inc_mday(2400, 2,28, 29);
 TEST_inc_mday(2400, 2,29,  1);
 
 #define TEST_inc_date(_y,_m,_d, _y2, _m2, _d2) \
-  TEST(stm32xx__date, inc__ ## _y ## __ ## _m ## __ ## _d) \
+  TEST(stm32xx__date, inc_date__ ## _y ## __ ## _m ## __ ## _d) \
   { \
     stm32xx::date date(_y,_m,_d); \
     date.inc_date(); \
@@ -338,7 +363,7 @@ TEST_inc_date(2012,  2,29, 2012, 3, 1);
 TEST_inc_date(2100,  2,28, 2100, 3, 1);
 TEST_inc_date(2400,  2,28, 2400, 2,29);
 TEST_inc_date(2400,  2,29, 2400, 3, 1);
-TEST_inc_date(STM32XX_DATE_YEAR_MAX,12,31, STM32XX_DATE_YEAR_MIN, 1, 1);
+TEST_inc_date(STM32XX_DATE_YEAR_MAX,12,31, STM32XX_DATE_YEAR_MIN, 10, 15);
 
 #define TEST_eq(_y1,_m1,_d1,_y2,_m2,_d2,_res) \
   TEST(stm32xx__date, eq__ ## _y1 ## __ ## _m1 ## __ ## _d1 ## ____ ## _y2 ## __ ## _m2 ## __ ## _d2) \
@@ -470,10 +495,26 @@ TEST_date_bcdp(2013,12,31, 0x20131231);
 TEST_to_rtc_dr(2013, 1, 1, 0x20134101);
 TEST_to_rtc_dr(2013,12,31, 0x20135231);
 
+#define TEST_from_gday(_g, _y, _m, _d) \
+  TEST(stm32xx__date, from_gday__ ## _g) \
+  { \
+    stm32xx::date d(stm32xx::date::from_gday(_g)); \
+    CHECK_EQUAL(_y, d.year()); \
+    CHECK_EQUAL(_m, d.mon()); \
+    CHECK_EQUAL(_d, d.mday()); \
+  }
+TEST_from_gday(1,      1582,10,15);
+TEST_from_gday(157418, 2013,10,12);
+TEST_from_gday(157498, 2013,12,31);
+TEST_from_gday(188969, 2100, 3, 1);
+TEST_from_gday(298541, 2400, 2,29);
+TEST_from_gday(917933, 4095,12,31);
+
+
 #define TEST_from_rtc_dr(_dr, _y,_m,_d) \
   TEST(stm32xx__date, from_rtc_dr__ ## _dr) \
   { \
-    stm32xx::date d = stm32xx::date::from_rtc_dr(_dr); \
+    stm32xx::date d(stm32xx::date::from_rtc_dr(_dr)); \
     CHECK_EQUAL(_y, d.year()); \
     CHECK_EQUAL(_m, d.mon()); \
     CHECK_EQUAL(_d, d.mday()); \

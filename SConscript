@@ -110,6 +110,11 @@ ovrr = dict([(k,v) for k,v in options.iteritems() if k not in local_opts])
 opts = dict([(k,v) for k,v in options.iteritems() if k in local_opts])
 
 #
+# SCONSCRIPT_TARGET
+#
+sconscript_target = opts.get('SCONSCRIPT_TARGET', 'lib')
+
+#
 # MCU_TARGET
 #
 try:             mcu_target = opts['MCU_TARGET']
@@ -141,9 +146,11 @@ except KeyError: raise SCons.Errors.UserError('You must specify CMSIS_BASEDIR')
 #
 mcu_core = opts.get('MCU_CORE', mcu_core_dict[mcu_family])
 mcu_core = mcu_core.lower()
-#if mcu_core:    mcu_flags = ['-mcpu=%s' % mcu_core, '-mthumb']
-#else:           mcu_flags = []
-mcu_flags = []
+if sconscript_target != 'unit-test':
+    if mcu_core:    mcu_flags = ['-mcpu=%s' % mcu_core, '-mthumb']
+    else:           mcu_flags = []
+else:
+    mcu_flags = []
 
 #
 # CPPDEFINES
@@ -198,7 +205,6 @@ libs = ovrr.get('LIBS', env.get('LIBS', []))
 libs = libs[:] # make a copy
 ovrr['LIBS'] = libs
 
-sconscript_target = opts.get('SCONSCRIPT_TARGET', 'lib')
 
 if sconscript_target == 'lib':
     #

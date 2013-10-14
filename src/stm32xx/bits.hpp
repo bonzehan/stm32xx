@@ -21,8 +21,8 @@
  */
 
 /** // doc: stm32xx/bits.hpp {{{
- * \file stm32xx/bits.hpp.
- * \todo Write documentation
+ * @file stm32xx/bits.hpp
+ * @todo Write documentation
  */ // }}}
 #ifndef STM32XX_BITS_HPP_INCLUDED
 #define STM32XX_BITS_HPP_INCLUDED

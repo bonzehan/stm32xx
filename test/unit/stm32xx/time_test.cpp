@@ -111,6 +111,16 @@ TEST_GROUP(stm32xx__time)
     CHECK_EQUAL(res, t.sec());
     CHECK_EQUAL(((uint32_t)s/60ul), ((uint32_t)t.sec_cnt()/60ul)); 
   }
+
+  void test_advance_time(hour_t h, min_t m, sec_t s, int32_t x, int32_t res,
+                         hour_t h2, min_t m2, sec_t s2)
+  {
+    stm32xx::time t(h,m,s);
+    CHECK_EQUAL(res, t.advance_time(x));
+    CHECK_EQUAL(h2, t.hour());
+    CHECK_EQUAL(m2, t.min());
+    CHECK_EQUAL(s2, t.sec());
+  }
 };
 
 /*
@@ -123,29 +133,68 @@ TEST(stm32xx__time, time)
  * time(cnt)
  */
 TEST(stm32xx__time, time__10)
-{ CHECK_EQUAL(10ul, stm32xx::time(10ul).sec_cnt()); }
-TEST(stm32xx__time, time__767650__hour)
-{ CHECK_EQUAL(21, stm32xx::time(76750ul).hour()); }
-TEST(stm32xx__time, time__767650__hour12)
-{ CHECK_EQUAL(9, stm32xx::time(76750ul).hour12()); }
-TEST(stm32xx__time, time__767650__min)
-{ CHECK_EQUAL(19, stm32xx::time(76750ul).min()); }
-TEST(stm32xx__time, time__767650__sec)
-{ CHECK_EQUAL(10, stm32xx::time(76750ul).sec()); }
+{ 
+  stm32xx::time t(10ul);
+  CHECK_EQUAL(10ul, t.sec_cnt()); 
+  CHECK_EQUAL(0ul,  t.hour()); 
+  CHECK_EQUAL(0ul,  t.min()); 
+  CHECK_EQUAL(10ul, t.sec()); 
+}
+TEST(stm32xx__time, time__767650)
+{ 
+  stm32xx::time t(76750ul);
+  CHECK_EQUAL(76750ul, t.sec_cnt());
+  CHECK_EQUAL(21, t.hour());
+  CHECK_EQUAL(9,  t.hour12());
+  CHECK_EQUAL(19, t.min());
+  CHECK_EQUAL(10, t.sec());
+}
 
 /*
  * time(h,m,s)
  */
 TEST(stm32xx__time, time__21__19__10)
-{ CHECK_EQUAL(76750ul,  stm32xx::time(21,19,10).sec_cnt()); }
+{ 
+  stm32xx::time t(21,19,10);
+  CHECK_EQUAL(21, t.hour());
+  CHECK_EQUAL(19, t.min());
+  CHECK_EQUAL(10, t.sec());
+  CHECK_EQUAL(76750ul, t.sec_cnt());
+}
 
 /*
  * time(h,m,s,pm)
  */
 TEST(stm32xx__time, time__9__19__10__false)
-{ CHECK_EQUAL(33550ul, stm32xx::time(9, 19, 10, false).sec_cnt()); }
+{ 
+  stm32xx::time t(9, 19, 10, false);
+  CHECK_EQUAL(9, t.hour12());
+  CHECK_EQUAL(19, t.min());
+  CHECK_EQUAL(10, t.sec());
+  CHECK(t.pm() == false);
+  CHECK_EQUAL(33550ul, t.sec_cnt());
+}
 TEST(stm32xx__time, time__9__19__10__true)
-{ CHECK_EQUAL(76750ul, stm32xx::time(9, 19, 10, true).sec_cnt()); }
+{ 
+  stm32xx::time t(9, 19, 10, true);
+  CHECK_EQUAL(9, t.hour12());
+  CHECK_EQUAL(19, t.min());
+  CHECK_EQUAL(10, t.sec());
+  CHECK(t.pm() == true);
+  CHECK_EQUAL(76750ul, t.sec_cnt()); 
+}
+
+/*
+ * from_rtc_tr(tr)
+ */
+TEST(stm32xx__time, from_rtc_tr__0x00211244)
+{ 
+  stm32xx::time t(stm32xx::time::from_rtc_tr(0x00211244));
+  CHECK_EQUAL(21, t.hour());
+  CHECK_EQUAL(12, t.min());
+  CHECK_EQUAL(44, t.sec());
+  CHECK_EQUAL(76364ul, t.sec_cnt());
+}
 
 /*
  * hour12()
@@ -212,8 +261,6 @@ TEST(stm32xx__time, time__0__0__59__sec_bcdp)
  */
 TEST(stm32xx__time, time__0__time_bcdp)
 { CHECK_EQUAL(0x00000000ul,stm32xx::time(0ul).time_bcdp()); }
-TEST(stm32xx__time, time__86400__time_bcdp)
-{ CHECK_EQUAL(0x00000000ul,stm32xx::time(86400ul).time_bcdp()); }
 TEST(stm32xx__time, time__0__0__0__time_bcdp)
 { CHECK_EQUAL(0x00000000ul,stm32xx::time(0,0,0).time_bcdp()); }
 TEST(stm32xx__time, time__0__0__59__time_bcdp)
@@ -230,8 +277,6 @@ TEST(stm32xx__time, time__23__58__59__time_bcdp)
  */
 TEST(stm32xx__time, time__0__time12_bcdp)
 { CHECK_EQUAL(0x00120000ul,stm32xx::time(0ul).time12_bcdp()); }
-TEST(stm32xx__time, time__86400__time12_bcdp)
-{ CHECK_EQUAL(0x00120000ul,stm32xx::time(86400ul).time12_bcdp()); }
 TEST(stm32xx__time, time__12__0__0__false__time12_bcdp)
 { CHECK_EQUAL(0x00120000ul,stm32xx::time(12,0,0,false).time12_bcdp()); }
 TEST(stm32xx__time, time__12__0__0__true__time12_bcdp)
@@ -248,17 +293,17 @@ TEST(stm32xx__time, time__11__58__59__true__time12_bcdp)
 #define TEST_set_hour(_c,_h) \
 TEST(stm32xx__time, time__ ## _c ## __set_hour__ ## _h) {test_set_hour(_c,_h);}
 
-TEST_set_hour(259193ul, 21); // 2days + 23:58:59 -> 2days + 21:58:59
+TEST_set_hour(86339ul, 21); // 23:58:59 -> 21:58:59
 
 #define TEST_set_min(_c,_m) \
 TEST(stm32xx__time, time__ ## _c ## __set_min__ ## _m) {test_set_min(_c,_m);}
 
-TEST_set_min(183599ul, 33); // 2days + 02:59:59 -> 2days + 02:33:59
+TEST_set_min(10799ul, 33); // 02:59:59 -> 02:33:59
 
 #define TEST_set_sec(_c,_s) \
 TEST(stm32xx__time, time__ ## _c ## __set_sec__ ## _s) {test_set_sec(_c,_s);}
 
-TEST_set_sec(183599ul, 37); // 2days + 02:59:59 -> 2days + 02:59:37
+TEST_set_sec(10799ul, 37); // 02:59:59 -> 02:59:37
 
 #define TEST_inc_hour(_s,_res) \
 TEST(stm32xx__time, time__ ## _s ## __inc_hour) {test_inc_hour(_s, _res);}
@@ -266,10 +311,6 @@ TEST(stm32xx__time, time__ ## _s ## __inc_hour) {test_inc_hour(_s, _res);}
 TEST_inc_hour(     0ul,  1); // 00:00:00
 TEST_inc_hour(  3600ul,  2); // 01:00:00
 TEST_inc_hour( 82800ul,  0); // 23:00:00
-TEST_inc_hour(172800ul,  1); // 2days + 00:00:00
-TEST_inc_hour(255600ul,  0); // 2days + 23:00:00
-TEST_inc_hour(176339ul,  1); // 2days + 00:58:59
-TEST_inc_hour(259193ul,  0); // 2days + 23:58:59
 
 #define TEST_dec_hour(_s,_res) \
 TEST(stm32xx__time, time__ ## _s ## __dec_hour) { test_dec_hour(_s,_res); }
@@ -277,10 +318,6 @@ TEST(stm32xx__time, time__ ## _s ## __dec_hour) { test_dec_hour(_s,_res); }
 TEST_dec_hour(     0ul, 23); // 00:00:00
 TEST_dec_hour(  3600ul,  0); // 01:00:00
 TEST_dec_hour( 82800ul, 22); // 23:00:00
-TEST_dec_hour(172800ul, 23); // 2days + 00:00:00
-TEST_dec_hour(255600ul, 22); // 2days + 23:00:00
-TEST_dec_hour(176339ul, 23); // 2days + 00:58:59
-TEST_dec_hour(259193ul, 22); // 2days + 23:58:59
 
 #define TEST_inc_min(_s,_res) \
 TEST(stm32xx__time, time__ ## _s ## __inc_min) { test_inc_min(_s,_res); }
@@ -288,10 +325,6 @@ TEST(stm32xx__time, time__ ## _s ## __inc_min) { test_inc_min(_s,_res); }
 TEST_inc_min(     0ul,  1); // 00:00:00
 TEST_inc_min(    60ul,  2); // 00:01:00
 TEST_inc_min(  3540ul,  0); // 00:59:00
-TEST_inc_min(172800ul,  1); // 2days + 00:00:00
-TEST_inc_min(176340ul,  0); // 2days + 00:59:00
-TEST_inc_min(180059ul,  1); // 2days + 02:00:59
-TEST_inc_min(183599ul,  0); // 2days + 02:59:59
 
 #define TEST_dec_min(_s,_res) \
 TEST(stm32xx__time, time__ ## _s ## __dec_min) { test_dec_min(_s,_res); }
@@ -299,10 +332,6 @@ TEST(stm32xx__time, time__ ## _s ## __dec_min) { test_dec_min(_s,_res); }
 TEST_dec_min(     0ul, 59); // 00:00:00
 TEST_dec_min(    60ul,  0); // 00:01:00
 TEST_dec_min(  3540ul, 58); // 00:59:00
-TEST_dec_min(172800ul, 59); // 2days + 00:00:00
-TEST_dec_min(176340ul, 58); // 2days + 00:59:00
-TEST_dec_min(180059ul, 59); // 2days + 02:00:59
-TEST_dec_min(183599ul, 58); // 2days + 02:59:59
 
 #define TEST_inc_sec(_s,_res) \
 TEST(stm32xx__time, time__ ## _s ## __inc_sec) { test_inc_sec(_s,_res); }
@@ -313,10 +342,6 @@ TEST_inc_sec(  3540ul,  1); // 00:59:00
 TEST_inc_sec(  3599ul,  0); // 00:59:59
 TEST_inc_sec( 86340ul,  1); // 23:59:00
 TEST_inc_sec( 86399ul,  0); // 23:59:59
-TEST_inc_sec(172800ul,  1); // 2days + 00:00:00
-TEST_inc_sec(180059ul,  0); // 2days + 02:00:59
-TEST_inc_sec(176340ul,  1); // 2days + 00:59:00
-TEST_inc_sec(183599ul,  0); // 2days + 02:59:59
 
 #define TEST_dec_sec(_s,_res) \
 TEST(stm32xx__time, time__ ## _s ## __dec_sec) { test_dec_sec(_s,_res); }
@@ -327,11 +352,24 @@ TEST_dec_sec(  3540ul, 59); // 00:59:00
 TEST_dec_sec(  3599ul, 58); // 00:59:59
 TEST_dec_sec( 86340ul, 59); // 23:59:00
 TEST_dec_sec( 86399ul, 58); // 23:59:59
-TEST_dec_sec(172800ul, 59); // 2days + 00:00:00
-TEST_dec_sec(180059ul, 58); // 2days + 02:00:59
-TEST_dec_sec(176340ul, 59); // 2days + 00:59:00
-TEST_dec_sec(183599ul, 58); // 2days + 02:59:59
 
+#define TEST_advance_time(_h, _m, _s, _x, _res, _h2, _m2, _s2) \
+  { \
+    stm32xx::time t(_h,_m,_s); \
+    CHECK_EQUAL(_res, t.advance_time(_x)); \
+    CHECK_EQUAL(_h2, t.hour()); \
+    CHECK_EQUAL(_m2, t.min()); \
+    CHECK_EQUAL(_s2, t.sec()); \
+  }
+
+TEST(stm32xx__time, advance_time)
+{
+  TEST_advance_time( 0, 0, 0,     1,   0, 0, 0, 1);
+  TEST_advance_time( 0, 0, 0,    -1,  -1,23,59,59);
+  TEST_advance_time(23,59,59,     1,   1, 0, 0, 0);
+  TEST_advance_time(10, 0, 0, 86400,   1,10, 0, 0);
+  TEST_advance_time(10, 0, 0,-86400,  -1,10, 0, 0);
+}
 
 // vim: set expandtab tabstop=2 shiftwidth=2:
 // vim: set foldmethod=marker foldcolumn=4:

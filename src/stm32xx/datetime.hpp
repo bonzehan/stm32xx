@@ -38,39 +38,85 @@ namespace stm32xx {
  * @todo Write documentation for datetime.
  */ // }}}
 class datetime
-  : date, time
+  : public date, public time
 {
 public: /* types */
+  /// Unsigned integer type used to represent flags
+  typedef uint8_t flag_t;
 public: /* constants */
-public: /* static methods */
+  /// Summer time flag.
+  constexpr static flag_t summer_time = 0x01u; 
 public: /* member methods */
   /// Default constructor.
   constexpr datetime()
-    : date(), time()
+    : date(), time(), _M_flags(0)
   { }
   /** // doc: datetime(y,m,d, c) {{{
    * @brief Constructor
    * @todo Write documentation
    */ // }}}
-  constexpr datetime(year_t y, mon_t m, mday_t d, sec_cnt_t c)
-    : date(y,m,d), time(c) 
-  { }
-  /** // doc: datetime(y,m,d, h,mn,s) {{{
-   * @brief Constructor
-   * @todo Write documentation
-   */ // }}}
-  constexpr datetime(year_t y, mon_t m, mday_t d, hour_t h, min_t mn, sec_t s)
-    : date(y,m,d), time(h,mn,s)
+  constexpr datetime(year_t y, mon_t m, mday_t d, sec_cnt_t c, flag_t f=0)
+    : date(y,m,d), time(c), _M_flags(f)
   { }
   /** // doc: datetime(y,m,d, h,mn,s) {{{
    * @brief Constructor
    * @todo Write documentation
    */ // }}}
   constexpr datetime(year_t y, mon_t m, mday_t d, hour_t h, min_t mn, sec_t s,
-                     bool pm)
-    : date(y,m,d), time(h,mn,s,pm)
+                     flag_t f=0)
+    : date(y,m,d), time(h,mn,s), _M_flags(f)
   { }
-public: /* member data */
+  /** // doc: datetime(y,m,d, h,mn,s) {{{
+   * @brief Constructor
+   * @todo Write documentation
+   */ // }}}
+  constexpr datetime(year_t y, mon_t m, mday_t d, hour_t h, min_t mn, sec_t s,
+                     bool pm, flag_t f=0)
+    : date(y,m,d), time(h,mn,s,pm), _M_flags(f)
+  { }
+  /** // doc: datetime(d,t) {{{
+   * @brief Constructor
+   * @todo Write documentation
+   */ // }}}
+  constexpr datetime(date d, time t, flag_t f=0)
+      : date(d), time(t), _M_flags(f)
+  { }
+  /** // doc: flags() {{{
+   * @todo Write documentation for stm32xx::datetime::flags()
+   */ // }}}
+  constexpr flag_t flags() const noexcept { return this->_M_flags; }
+  /** // doc: set_flags(f) {{{
+   * @todo Write documentation for stm32xx::datetime::flags()
+   */ // }}}
+  inline void set_flags(flag_t f) noexcept { this->_M_flags = f; }
+  /** // doc: advance_datetime(s) {{{
+   * @brief Add @c s seconds to current time modifying date if necessary.
+   *
+   * <b>Example</b>:
+   * @code
+   * using namespace stm32xx;
+   * datetime dt(2013,10,13, 23,0,0); //          2013-10-13 23:00:00
+   * dt.advance_datetime(3601);       // +1h1s => 2013-10-14 00:00:01
+   * @endcode
+   */ // }}}
+  inline void advance_datetime(int32_t s)
+  {
+    this->advance_date(this->advance_time(s));
+  }
+  /** // doc: dst_update() {{{
+   * @brief Apply Daylight Saving Time update.
+   * @return the number of hours added to current time.
+   *
+   * The returned value is:
+   * - @c  0 if time is left unchanged (this is for most cases),
+   * - @c  1 if time has been changed from winter to summer (+1 hour),
+   * - @c -1 if time has been changed from summer to winter (-1 hour).
+   */ // }}}
+  int32_t dst_update() noexcept;
+protected: /* member data */
+  flag_t _M_flags;
+
+public: /* static methods */
 };
 
 } /* namespace stm32xx */

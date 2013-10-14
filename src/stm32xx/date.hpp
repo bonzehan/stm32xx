@@ -37,7 +37,7 @@
 /** // doc: STM32XX_DATE_YEAR_MIN {{{
  * @brief Lowest allowed year in stm32xx::date.
  */ // }}}
-# define STM32XX_DATE_YEAR_MIN 1900
+# define STM32XX_DATE_YEAR_MIN 1582
 #endif
 #ifndef STM32XX_DATE_YEAR_MAX
 /** // doc: STM32XX_DATE_YEAR_MIN {{{
@@ -45,29 +45,47 @@
  */ // }}}
 # define STM32XX_DATE_YEAR_MAX 4095
 #endif
+#ifndef STM32XX_DATE_DEFAULT_YEAR
+/** // doc: STM32XX_DATE_DEFAULT_YEAR {{{
+ * @brief Default date year, used by stm32xx::date default constructor.
+ */ // }}}
+# define STM32XX_DATE_DEFAULT_YEAR 2000
+#endif
+#ifndef STM32XX_DATE_DEFAULT_MON
+/** // doc: STM32XX_DATE_DEFAULT_MON {{{
+ * @brief Default date month, used by stm32xx::date default constructor.
+ */ // }}}
+# define STM32XX_DATE_DEFAULT_MON 1
+#endif
+#ifndef STM32XX_DATE_DEFAULT_MDAY
+/** // doc: STM32XX_DATE_DEFAULT_MDAY {{{
+ * @brief Default date month, used by stm32xx::date default constructor.
+ */ // }}}
+# define STM32XX_DATE_DEFAULT_MDAY 1
+#endif
 #ifndef STM32XX_DATE_YEAR_T
 /** // doc: STM32XX_DATE_YEAR_T {{{
  * @brief Integer type to be used by stm32xx::date to represent years.
  */ // }}}
-# define STM32XX_DATE_YEAR_T uint32_t
+# define STM32XX_DATE_YEAR_T int16_t
 #endif
 #ifndef STM32XX_DATE_MON_T
 /** // doc: STM32XX_DATE_MON_T {{{
  * @brief Integer type to be used by stm32xx::date to represent months.
  */ // }}}
-# define STM32XX_DATE_MON_T uint32_t
+# define STM32XX_DATE_MON_T int8_t
 #endif
 #ifndef STM32XX_DATE_MDAY_T
 /** // doc: STM32XX_DATE_MDAY_T {{{
  * @brief Integer type to be used by stm32xx::date to represent days of month.
  */ // }}}
-# define STM32XX_DATE_MDAY_T uint32_t
+# define STM32XX_DATE_MDAY_T int8_t
 #endif
 #ifndef STM32XX_DATE_YDAY_T
 /** // doc: STM32XX_DATE_YDAY_T {{{
  * @brief Integer type to be used by stm32xx::date to represent days of year.
  */ // }}}
-# define STM32XX_DATE_YDAY_T uint32_t
+# define STM32XX_DATE_YDAY_T uint16_t
 #endif
 
 #if ((STM32XX_DATE_YEAR_MIN) < 0)
@@ -94,9 +112,9 @@ namespace stm32xx {
  * - month (read with mon() method),
  * - day of month (read with mday() method),
  *
- * By default, all three integers are of type @c uint32_t. You may change
- * defaults by defining preprocessor constants: @ref STM32XX_DATE_YEAR_T,
- * @ref STM32XX_DATE_MON_T and @ref STM32XX_DATE_MDAY_T.
+ * You may change default types used to represent year, month and day of month
+ * by defining preprocessor constants: @ref STM32XX_DATE_YEAR_T, @ref
+ * STM32XX_DATE_MON_T and @ref STM32XX_DATE_MDAY_T.
  *
  * <b>Other characteristics</b>
  *
@@ -107,7 +125,7 @@ namespace stm32xx {
  * <b>Initialization and modification</b>
  *
  * The date may be initialized by constructors and/or set by setter methods:
- * set_year(), set_mon() and set_mday().
+ * set_year(), set_mon() and set_mday(). 
  *
  * @note Neither the constructors nor setters prevent from setting an invalid
  * date (February 31, for example). Your application should validate user's
@@ -119,6 +137,9 @@ namespace stm32xx {
  * stm32xx::date d(2013,2,31);  // 2013-02-31 (invalid date)
  * d.clamp_date();              // 2013-02-28 (corrected date)
  * @endcode
+ *
+ * @note Dates before Oct 15, 1582 are regarded as invalid, and are rounded by
+ * clamp_date() to Oct 15, 1582..
  *
  * The date may also be modified by using inc_year(), dec_year(), inc_mon(),
  * dec_mon(), inc_mday(), dec_mday() methods. They may be used to implement
@@ -144,22 +165,78 @@ namespace stm32xx {
  *
  * <b>Support for RTC timers</b>
  *
- * An "entry point" for an RTC timer is the inc_date() method which moves date
- * forward by one day. Provided the date is valid prior to inc_date() invocation,
- * it remains valid after inc_date().
+ * @note The following description only shows how to handle date, isolated
+ * from daytime information. Instructions regarding complete information
+ * (including date and daytime) may be found in documentation of
+ * stm32xx::datetime.
+ *
+ * There are several ways to implement RTC-based calendar with stm32xx::date.
+ *
+ * <b>Devices without hardware clock/calendar</b>:
+ *
+ * On devices with no hardware clock/calendar functionality one usually stores
+ * date in RTC backup domain and uses RTC_CNT counter to measure time offset
+ * of the current time from the date stored in backup registers (in seconds).
+ *
+ * The first approach is to initialize the stm32xx::date object every second
+ * (in RTC interrupt, for example) using the above pieces of information,
+ * update RTC counter, and store updated date in backup registers, for example:
+ *
+ * - at each second do:
+ * @code
+ * date d(restore_date() + RTC->CNT/86400);
+ * RTC->CNT = RTC_CNT % 86400;
+ * store_date(d.gday());
+ * @endcode
+ * where @c restore_date() is some function that reads date stored in RTC
+ * backup registers and store_date() does the opposite.
+ *
+ * Other applications may prefer to initialize @ref date object from backed-up
+ * values once at startup and utilize the inc_date() to update a @ref date
+ * object at midnight.
+ * - at startup do:
+ *   @code
+ *   // d is a static object.
+ *   d.set_date(restore_date() + RTC->CNT/86400);
+ *   RTC->CNT = RTC->CNT % 86400;
+ *   store_date(d.gday());
+ *   @endcode
+ * - at each midnight do:
+ *   @code
+ *   d.inc_date();
+ *   RTC->CNT -= 86400;
+ *   store_date(d.gday());
+ *   @endcode
+ *
+ * <b>Devices with hardware clock/calendar</b>:
  *
  * Some of the STM32 MCUs are equipped with hardware RTC calendar (see AN3371
- * and reference manuals for relevant MCUs). These chips store date as packed
- * BCD code in RTC_DR register. The stm32xx::date class is able to convert date
- * from and to the format compatible with RTC_DR register. The relevant methods 
- * are from_rtc_dr() and to_rtc_dr().
+ * and reference manuals for the relevant MCUs). These chips store date as
+ * packed BCD code in RTC_DR register and the daytime in separate RTC_TR
+ * register. These chips do not require the application to maintain seconds'
+ * counter as in previous examples. Also the date (and time) registers are
+ * updated automatically, so there is no need for manipulating date within
+ * periodic RTC interrupt handlers unless one needs to handle daylight saving
+ * time update, for example. For such cases the initialization of stm32xx::date
+ * simplifies to:
+ * @code
+ * date d(from_rtc_dr(RTC->DR,2000)); // subtract 2000 from value being stored
+ * @endcode
+ * Storing modified date is also easy:
+ * @code
+ * // for appropriate mask see reference manual for your target MCU, 
+ * // this example is for STM32F4xx.
+ * RTC->DR = d.to_rtc_dr(2000) & 0x00FFFF3Ful;
+ * @endcode
+ * The stm32xx::date class is able to convert date from and to the format
+ * compatible with RTC_DR register. The relevant methods are from_rtc_dr() and
+ * to_rtc_dr().
  *
- * <b>Storing date in backup registers</b>
+ * <b>Support for Daylight Saving Time changes</b>:
  *
- * If the hardware RTC calendar is not available, to_rtc_dr() may still be used
- * to compute a 32-bit word to be stored in backup registers. This format may
- * be preferred by application which use digital displays (LCD, LED, ...)
- * accepting BCD-coded data.
+ * These methods may be used to determine when the summer and winter time
+ * starts: dst_summer_gday(), dst_winter_gday(), dst_summer_gday(int32_t),
+ * dst_winter_gday(int32_t).
  *
  * <b>Converting to BCD codes</b>
  *
@@ -170,13 +247,12 @@ namespace stm32xx {
  *
  * <b>Overloaded operators</b>
  *
- * In addition to accessors and modifiers, the class overloads comparison
- * operators such that comparing dates is a one-liner such as:
- * @code
- * stm32xx::date(2013,10,9) < stm32xx::date(2013,11,1); // true
- * @endcode
- * The following operators are overloaded: operator==(), operator!=(),
- * operator<(), operator<=(), operator>(), operator>=().
+ * The following operartors are overloaded:
+ * - comparison: operator==(), operator!=(), operator<(), operator<=(),
+ *   operator>(), operator>=().
+ * - advance date: operator+=(), operator-=(),
+ * - plus/minus: operator+(stm32xx::date const&,int32_t), 
+ *               operator-(stm32xx::date const&,int32_t).
  */ // }}}
 class date
 {
@@ -200,81 +276,8 @@ public: /* types */
       wday_sat,
       wday_sun,
     };
-
-public: /* static methods */
-  /** // doc: from_rtc_dr(y) {{{
-   * @brief Create new date from RTC_DR value.
-   * @param dr the input value; should have same format as the value returned
-   *        by to_rtc_dr() or date_bcdp().
-   * @param yoff year offset, this value is added to year value decoded from
-   *        @c dr.
-   *
-   * @note The week day (WDU[2:0]) bits in @c dr are ignored.
-   *
-   * @return a new stm32xx::date object.
-   */ // }}}
-  constexpr static date from_rtc_dr(uint32_t dr, year_t yoff = 0) noexcept
-  {
-    return date(  bcdp<4>::decode((dr&0xFFFF0000ul) >> 16) + yoff,
-                  bcdp<2>::decode((dr&0x00001F00ul) >>  8),
-                  bcdp<2>::decode( dr&0x0000003Ful) );
-  }
-  /** // doc: leap_year() {{{
-   * @brief Is this a leap year?
-   * @param y year, an integer in range <tt>[@ref STM32XX_DATE_YEAR_MIN ..
-   *        @ref STM32XX_DATE_YEAR_MAX]</tt>
-   * @return @c true if @c y is a leap year, or @c false if not.
-   */ // }}}
-  static bool leap_year(year_t y) noexcept;
-  /** // doc: mdays() {{{
-   * @brief Return number of days in a month.
-   * @param y year, an integer in range <tt>[@ref STM32XX_DATE_YEAR_MIN ..
-   *          @ref STM32XX_DATE_YEAR_MAX]</tt>,
-   * @param m month, an integer in range <tt>[1 .. 12]</tt>
-   * @return number of days in the month @c m &mdash; an integer from range
-   *         <tt>[28 .. 31]</tt>.
-   */ // }}}
-  static mday_t mdays(year_t y, mon_t m) noexcept;
-  /** // doc: yday() {{{
-   * @brief Given a date (year, month, day of month) determine day of year.
-   * @param y year, an integer in range <tt>[@ref STM32XX_DATE_YEAR_MIN ..
-   *        @ref STM32XX_DATE_YEAR_MAX]</tt>,
-   * @param m month, an integer in range <tt>[1 .. 12]</tt>,
-   * @param d day of month, an integer in range <tt>[1 .. mdays(y,m)]</tt>,
-   * @return an integer from range <tt>[0 .. 364]</tt> or <tt>[0 .. 365]</tt>
-   * (leap year).
-   */ // }}}
-  static yday_t yday(year_t y, mon_t m, mday_t d) noexcept;
-  /** // doc: wday() {{{
-   * @brief Given a date (year, month, day of month) determine day of week.
-   * @param y year, an integer in range <tt>[@ref STM32XX_DATE_YEAR_MIN ..
-   *        @ref STM32XX_DATE_YEAR_MAX]</tt>,
-   * @param m month, an integer in range <tt>[1 .. 12]</tt>,
-   * @param d day of month, an integer in range <tt>[1 .. mdays(y,m)]</tt>,
-   * @return an enum naming the day of week of given date @c d.
-   */ // }}}
-  static wday_t wday(year_t y, mon_t m, mday_t d) noexcept;
-  /** // doc: clamp_year(y) {{{
-   * @brief Correct year if out of range.
-   * @param y a reference to year variable.
-   * @return corrected year.
-   */ // }}}
-  static year_t clamp_year(year_t y) noexcept;
-  /** // doc: clamp_year() {{{
-   * @brief Correct month if out of range.
-   * @param m a reference to month variable.
-   * @return corrected month.
-   */ // }}}
-  static mon_t clamp_mon(mon_t m) noexcept;
-  /** // doc: clamp_mday() {{{
-   * @brief Correct day of month if out of range.
-   * @param y year, an integer in range <tt>[@ref STM32XX_DATE_YEAR_MIN ..
-   *        @ref STM32XX_DATE_YEAR_MAX]</tt>,
-   * @param m month, an integer in range <tt>[1 .. 12]</tt>,
-   * @param d a reference to day of month variable.
-   * @return corrected day of month.
-   */ // }}}
-  static mday_t clamp_mday(year_t y, mon_t m, mday_t d) noexcept;
+  /// Signed integer used to represent day count (since 0000:03:01).
+  typedef int32_t gday_t;
 
 public: /* member methods */
   /** // doc: date() {{{
@@ -282,12 +285,14 @@ public: /* member methods */
    *
    * By default, the date is initialized with the following values:
    *
-   * - year:  @ref STM32XX_DATE_YEAR_MIN
-   * - month: 1 (January),
-   * - mday:  1
+   * - year:  @ref STM32XX_DATE_DEFAULT_YEAR
+   * - month: @ref STM32XX_DATE_DEFAULT_MON
+   * - mday:  @ref STM32XX_DATE_DEFAULT_MDAY
    */ // }}}
   constexpr date() noexcept
-    : _M_year(STM32XX_DATE_YEAR_MIN), _M_mon(1), _M_mday(1)
+    : _M_year(STM32XX_DATE_DEFAULT_YEAR), 
+      _M_mon(STM32XX_DATE_DEFAULT_MON),
+      _M_mday(STM32XX_DATE_DEFAULT_MDAY)
   {
   }
   /** // doc: date(y,m,d) {{{
@@ -309,7 +314,15 @@ public: /* member methods */
 
   /* validation and munging */
   /// Does this object represent a valid date?
-  bool date_valid() const noexcept;
+  constexpr bool date_valid() const noexcept
+  {
+    return (this->year() >= STM32XX_DATE_YEAR_MIN) 
+        && (this->year() <= STM32XX_DATE_YEAR_MAX)
+        && (this->mon()  >=  1)
+        && (this->mon()  <= 12)
+        && (this->mday() >=  1)
+        && (this->mday() <= this->mdays());
+  }
   /// Round the date to a nearest valid value.
   void clamp_date() noexcept;
 
@@ -394,8 +407,24 @@ public: /* member methods */
    *
    * The main purpose of this method is to let RTC easily update the date as
    * midnight passes.
+   *
+   * @return @c true if calendar wrap occured (STM32XX_DATE_YEAR_MAX passed)
    */ // }}}
-  void inc_date() noexcept;
+  bool inc_date() noexcept;
+  /** // doc: advance_date() {{{
+   * @brief Move the date forward by a number of days.
+   * @param days number of days to add to current date (possibly negative).
+   *
+   * @note As oposse to inc_date(), this method does not guarantee that date is
+   * in range after operation. It's possible to go past STM32XX_DATE_YEAR_MAX
+   * or before STM32XX_DATE_YEAR_MIN.
+   *
+   * The main purpose of this method is to let RTC easily update the date.
+   */ // }}}
+  void advance_date(int32_t days) noexcept
+  {
+    this->set_date(days + gday());
+  }
 
   /* accessors */
   /// Get year.
@@ -410,6 +439,10 @@ public: /* member methods */
   inline void set_mon(mon_t m) noexcept { this->_M_mon = m; }
   /// Set day of month
   inline void set_mday(mday_t d) noexcept { this->_M_mday = d; }
+  /// Set date
+  inline void set_date(date const& other) noexcept { *this = other; }
+  /// Set date
+  inline void set_date(gday_t g) noexcept { this->set_date(from_gday(g)); }
 
   /* comparison operators */
   /// operator ==
@@ -442,17 +475,17 @@ public: /* member methods */
         )
       );
   }
-  /// operator <=
-  constexpr bool
-  operator <= (date const& other) const noexcept
-  {
-    return ((*this) < other) || ((*this) == other);
-  }
   /// operator >
   constexpr bool
   operator > (date const& other) const noexcept
   {
-    return !((*this) <= other);
+    return other < (*this);
+  }
+  /// operator <=
+  constexpr bool
+  operator <= (date const& other) const noexcept
+  {
+    return !((*this) > other);
   }
   /// operator >=
   constexpr bool
@@ -460,27 +493,60 @@ public: /* member methods */
   {
     return !((*this) < other);
   }
+  /// operator +=
+  inline date& operator += (int32_t days) noexcept
+  {
+    this->advance_date(days);
+    return *this;
+  }
+  /// operator -=
+  inline date& operator -= (int32_t days) noexcept
+  {
+    this->advance_date(-days);
+    return *this;
+  }
 
   /* other methods */
+  /** // doc: gday() {{{
+   * @fn gday_t stm32xx::date::gday() const
+   * @brief Get Lilian Day Number (computed from year(), mon(), mday()).
+   *
+   * Equivalent to, <tt>gday(this->year(),this->mon(),this->mday())</tt>,
+   * see @ref gday(int32_t, int32_t, int32_t).
+   */ // }}}
+  constexpr gday_t gday() const noexcept
+  {
+    return gday(this->year(), this->mon(), this->mday());
+  }
   /// Get day of year for this date (computed from year(), mon() and mday()).
   inline yday_t yday() const noexcept 
   {
     return yday(this->year(), this->mon(), this->mday()); 
   }
   /// Get day of week for this date (computed from year(), mon() and mday()).
-  inline wday_t wday() const noexcept 
+  constexpr wday_t wday() const noexcept 
   {
-    return wday(this->year(), this->mon(), this->mday()); 
+    return (wday_t)wday(this->gday()); 
   }
   /// Do we have a leap year?
-  inline bool leap_year() const noexcept 
+  constexpr gday_t leap_year() const noexcept 
   {
     return leap_year(this->year());
   }
   /// How many days the current month has?
-  inline mday_t mdays() const noexcept
+  constexpr mday_t mdays() const noexcept
   {
     return date::mdays(this->year(), this->mon());
+  }
+  /// First day of summer time (Daylight Saving Time)
+  constexpr gday_t dst_summer_yday() const noexcept
+  {
+    return dst_summer_yday(this->year());
+  }
+  /// First day of winter time (Daylight Saving Time)
+  constexpr gday_t dst_winter_yday() const noexcept
+  {
+    return dst_winter_yday(this->year());
   }
   /** // doc: year_bcdp() {{{
    * @brief Return year (year()) as packed BCD code.
@@ -507,7 +573,7 @@ public: /* member methods */
    * - bits  7:4  <b>YT[3:0]</b> year tens in BCD format
    * - bits  3:0  <b>YU[3:0]</b> year uints in BCD format
    */ // }}}
-  constexpr uint32_t year_bcdp(year_t yoff=0) const noexcept
+  constexpr uint32_t year_bcdp(int32_t yoff=0) const noexcept
   {
     return bcdp<4>::encode((uint32_t)(this->year()-yoff));
   }
@@ -578,7 +644,7 @@ public: /* member methods */
    * with the bits defined as:
    * - bits 2:0 <b>WDU[2:0]</b> day units in BCD format,
    */ // }}}
-  inline uint32_t wday_bcdp() const noexcept
+  constexpr uint32_t wday_bcdp() const noexcept
   {
     return bcdp<1>::encode((uint32_t)this->wday() & (uint32_t)0x7);
   }
@@ -613,7 +679,7 @@ public: /* member methods */
    * - bits 5:4 <b>DT[1:0]</b> date tens in BCD format,
    * - bits 3:0 <b>DU[3:0]</b> date units in BCD format,
    */ // }}}
-  constexpr uint32_t date_bcdp(year_t yoff = 0) const noexcept
+  constexpr uint32_t date_bcdp(int32_t yoff = 0) const noexcept
   {
     return  (this->year_bcdp(yoff)  << 16)
           | (this->mon_bcdp()       << 8)
@@ -648,9 +714,9 @@ public: /* member methods */
    * - bits 19:16 <b>YU[3:0]</b> year uints in BCD format
    * - bits 15:13 <b>WDU[2:0]</b> week day units:
    *   - 000: forbidden
-   *   - 001: Monday
+   *   - 001: Mogday
    *   - ...
-   *   - 111: Sunday
+   *   - 111: Sugday
    * - bit 12 <b>MT</b>: month tens in BCD format,
    * - bits 11:8 <b>MU</b> month units in BCD format,
    * - bits 7:6 reserved, must be keept at reset value,
@@ -677,15 +743,269 @@ public: /* member methods */
    * With the additional bits the conversion is lossless. The extra bits can be
    * easily masked-out when setting to physical RTC_DR register.
    */ // }}}
-  uint32_t to_rtc_dr(year_t yoff = 0) const noexcept;
+  constexpr uint32_t to_rtc_dr(int32_t yoff = 0) const noexcept
+  {
+    return  this->date_bcdp(yoff) | (this->wday_bcdp() << 13);
+  }
 
 protected: /* members */
   year_t _M_year;
   mon_t _M_mon;
   mday_t _M_mday;
+
+public: /* static methods */
+  /** // doc: from_rtc_dr(y) {{{
+   * @brief Create new date from RTC_DR value.
+   * @param dr the input value; should have same format as the value returned
+   *        by to_rtc_dr() or date_bcdp().
+   * @param yoff year offset, this value is added to year value decoded from
+   *        @c dr.
+   *
+   * @note The week day (WDU[2:0]) bits in @c dr are ignored.
+   *
+   * @return a new stm32xx::date object.
+   */ // }}}
+  constexpr static date from_rtc_dr(uint32_t dr, int32_t yoff = 0) noexcept
+  {
+    return date(  bcdp<4>::decode((dr&0xFFFF0000ul) >> 16) + yoff,
+                  bcdp<2>::decode((dr&0x00001F00ul) >>  8),
+                  bcdp<2>::decode( dr&0x0000003Ful) );
+  }
+  /** doc: from_gday() {{{
+   * @brief Create new date from day number.
+   *
+   * @param g day number as returned by gday(year_t,mon_t,mday_t)
+   * @return a new stm32xx::date object
+   */ // }}}
+  static date from_gday(gday_t g) noexcept;
+  /** // doc: gday(y,m,d) {{{
+   * @fn int32_t stm32xx::date::gday(int32_t,int32_t, int32_t)
+   * @brief Convert Gregorian date to Lilian Day Number.
+   *
+   * @param y year, an integer <tt> >= 1582</tt>,
+   * @param m month, an integer in range [1 .. 12],
+   * @param d day of month, an integer in range [1 .. mdays(y,m)],
+   * @return the Lilian Day Number.
+   *
+   * @note Correct results are guaranteed only for dates equal to or latter
+   * than @c Oct 15, 1582. Oct 15, 1582 is the first day of Gregorian calendar
+   * and is preceded by Oct 4, 1582 of the Julian Calendar (old calendar).
+   * Results obtained for earlier dates are generally invalid (Julian Calendar
+   * has different concept of leap years).
+   *
+   * This function converts a Gregorian date (year, month, day) to an integer
+   * denoting number of days elapsed since Oct 14, 1582 AD (day no. 0). The
+   * returned value is simply the Lilian Day Number. The Lilian Day 1 is the
+   * first day of the Gregorian calendar. 
+   *
+   * <b>Beginning of Gregorian Calendar</b>:
+   * @verbatim
+     Oct, 1582:
+
+     Mon Tue Wed Thu Fri Sat Sun
+                     15  16  17
+     18  19  20  21  22  23  24
+     25  26  27  28  29  30  31
+     @endverbatim
+   *
+   * The formula used to determine the day number is equivalent to function:
+   * @code
+   * function g(y,m,d)
+   *   m = (m+9) % 12
+   *   y = y - m/10
+   *   return 365*y + y/4 - y/100 + y/400 + (m*306 + 5)/10 + ( d - 1) - 578040
+   * @endcode
+   *
+   * taken from
+   *
+   * - http://alcor.concordia.ca/~gpkatch/gdate-algorithm.html
+   *
+   * with a minor modification (offset 578040).
+   *
+   * The offset <tt>578040 == number of days between Oct 15, 1582 and Mar 1,
+   * 0000)</tt>.
+   *
+   * <b>The formula for day of week</b>:
+   *
+   * This follows from the properties of Lilian Day Number:
+   * @code
+   * g = gday(y,m,d)
+   * wday = 1 + (3 + (g % 7))
+   * @endcode
+   * where, <tt>1 => Mon</tt>, <tt>2 => Tue</tt>, ..., <tt>7 => Sun</tt>.
+   */ // }}}
+  constexpr static int32_t gday(int32_t y, int32_t m, int32_t d) noexcept
+  {
+    return (m<3) ? gday_f(y-1, m+9, d) : gday_f(y, m-3, d);
+  }
+  // -
+  constexpr static int32_t gday_f(int32_t y, int32_t m, int32_t d) noexcept
+  {
+    return 365*y + y/4 - y/100 + y/400 + (m*306+5)/10 + (d-1) - 578040;
+  }
+  /** // doc: yday(y,m,d) {{{
+   * @brief Given a date (year, month, day of month) determine day of year.
+   * @param y year, an integer in range <tt>[@ref STM32XX_DATE_YEAR_MIN ..
+   *        @ref STM32XX_DATE_YEAR_MAX]</tt>,
+   * @param m month, an integer in range <tt>[1 .. 12]</tt>,
+   * @param d day of month, an integer in range <tt>[1 .. mdays(y,m)]</tt>,
+   * @return an integer from range <tt>[0 .. 364]</tt> or <tt>[0 .. 365]</tt>
+   * (leap year).
+   */ // }}}
+  constexpr static int32_t yday(int32_t y, int32_t m, int32_t d) noexcept
+  {
+    return gday(y,m,d) - gday(y,1,1);
+  }
+  /** // doc: wday() {{{
+   * @brief Given a date (year, month, day of month) determine day of week.
+   * @param g day number, as returned by gday(year_t,mon_t,mday_t)
+   * @return an enum naming the day of week of given date @c d.
+   */ // }}}
+  constexpr static int32_t wday(int32_t g) noexcept
+  {
+    return (wday_t)(1 + ((3+g) % 7));
+  }
+  /** // doc: mdays(y,m) {{{
+   * @brief Return number of days in a month.
+   * @param y year, an integer in range <tt>[@ref STM32XX_DATE_YEAR_MIN ..
+   *          @ref STM32XX_DATE_YEAR_MAX]</tt>,
+   * @param m month, an integer in range <tt>[1 .. 12]</tt>
+   * @return number of days in the month @c m &mdash; an integer from range
+   *         <tt>[28 .. 31]</tt>.
+   */ // }}}
+  constexpr static int32_t mdays(int32_t y, int32_t m) noexcept
+  {
+    return (m == 2) ? (28 + leap_year(y)) : 30 + ((m + (m>>3))&0x1);
+  }
+  /** // doc: leap_year() {{{
+   * @brief Is this a leap year?
+   * @param y year, an integer in range <tt>[@ref STM32XX_DATE_YEAR_MIN ..
+   *        @ref STM32XX_DATE_YEAR_MAX]</tt>
+   * @return @c 1 if @c y is a leap year, or @c 0 if not.
+   */ // }}}
+  constexpr static int32_t leap_year(int32_t y) noexcept
+  {
+    return ((y%400) == 0) ? 1: (((y%100) == 0) ? 0: ((y%4)==0) ? 1 : 0);
+  }
+  /** // doc: dst_summer_gday(y) {{{
+   * @fn int32_t dst_summer_gday(int32_t)
+   * @brief Determine the first day of summer time of year @c y.
+   * @param y year, an integer value
+   * @return day number of the first day of summer time of year @c y, relative
+   * to Jan 1 of the year @c y.
+   * @brief 
+   */ // }}}
+  constexpr static int32_t dst_summer_yday(int32_t y) noexcept
+  {
+    // FIXME: this rule shouldn't be hardcoded (it works for EU, not for others)
+    return find_wday(gday(y,4,1), wday_sun, -1) - gday(y,1,1);
+  }
+  /** // doc: dst_winter_gday(y) {{{
+   * @fn int32_t dst_winter_gday(int32_t)
+   * @brief Determine the first day of winter time of year @c y.
+   * @param y year, an integer value
+   * @return day number of the first day of winter time of year @c y, relative
+   * to Jan 1 of the year @c y.
+   * @brief 
+   */ // }}}
+  constexpr static int32_t dst_winter_yday(int32_t y) noexcept
+  {
+    // FIXME: this rule shouldn't be hardcoded (it works for EU, not for others)
+    return find_wday(gday(y,11,1), wday_sun, -1) - gday(y,1,1);
+  }
+  /** // doc: find_wday(g, w, n) {{{
+   * @brief Find particular day of week in calendar.
+   * @param g Lilian Day Number of the search base,
+   * @param w day of the week to find
+   * @param n number of weeks to add to the result
+   * @return Lilian Day Number of the day found
+   *
+   * Given a Lilian Day Number of a base day and the name of week day, this
+   * method searches forward for that week day.
+   *
+   * <b>Examples</b>:
+   *
+   * 1. Find first Friday of Oct, 2013:
+   *    @code
+   *    find_wday(gday(2013,10,1), wday_fri);     // -> Oct 4, 2013
+   *    @endcode
+   * 2. Find second Friday of Oct, 2013:
+   *    @code
+   *    find_wday(gday(2013,10,1), wday_fri, 1);  // -> Oct 11, 2013
+   *    @endcode
+   * 3. Find last Sunday of October, 2013:
+   *    @code
+   *    find_wday(gday(2013,11,1), wday_fri,-1);  // -> Oct 27, 2013
+   *    @endcode
+   * 4. Find nearest Friday, starting from Oct 4, 2013:
+   *    @code
+   *    find_wday(gday(2013,10,4), wday_fri);     // -> Oct 4, 2013
+   *    @endcode
+   * 5. Find Friday prior to Oct 4, 2013:
+   *    @code
+   *    find_wday(gday(2013,10,4), wday_fri, -1); // -> Sep 27, 2013
+   *    @endcode
+   */ // }}}
+  constexpr static int32_t
+  find_wday(int32_t g, wday_t w, int32_t n = 0) noexcept
+  {
+    return g + ((7 + w - wday(g)) % 7) + 7 * n;
+  }
+  /** // doc: clamp_year(y) {{{
+   * @brief Correct year if out of range.
+   * @param y a reference to year variable.
+   * @return corrected year.
+   */ // }}}
+  constexpr static int32_t clamp_year(int32_t y) noexcept
+  {
+    return  (y < STM32XX_DATE_YEAR_MIN) ?  STM32XX_DATE_YEAR_MIN 
+        :  ((y > STM32XX_DATE_YEAR_MAX) ?  STM32XX_DATE_YEAR_MAX : y);
+  }
+  /** // doc: clamp_year() {{{
+   * @brief Correct month if out of range.
+   * @param m a reference to month variable.
+   * @return corrected month.
+   */ // }}}
+  constexpr static int32_t clamp_mon(int32_t m) noexcept
+  {
+    return (m < 1) ? 1 : ((m > 12) ? 12 : m);
+  }
+  /** // doc: clamp_mday() {{{
+   * @brief Correct day of month if out of range.
+   * @param y year, an integer in range <tt>[@ref STM32XX_DATE_YEAR_MIN ..
+   *        @ref STM32XX_DATE_YEAR_MAX]</tt>,
+   * @param m month, an integer in range <tt>[1 .. 12]</tt>,
+   * @param d a reference to day of month variable.
+   * @return corrected day of month.
+   */ // }}}
+  constexpr static int32_t clamp_mday(int32_t y, int32_t m, int32_t d) noexcept
+  {
+    return (d < 1) ? 1 : ((d > mdays(y,m)) ? mdays(y,m) : d);
+  }
 };
 
 } /* namespace stm32xx */
+
+/** // doc: operator+() {{{
+ * @fn stm32xx::date stm32xx::operator+(stm32xx::date const&,int32_t)
+ * @brief operator+()
+ */ // }}}
+inline stm32xx::date operator + (stm32xx::date const& d, int32_t days) noexcept
+{
+  stm32xx::date d2(d);
+  d2.advance_date(days);
+  return d2;
+}
+/** // doc: operator-() {{{
+ * @fn stm32xx::date stm32xx::operator-(stm32xx::date const&,int32_t)
+ * @brief operator-()
+ */ // }}}
+inline stm32xx::date operator - (stm32xx::date const& d, int32_t days) noexcept
+{
+  stm32xx::date d2(d);
+  d2.advance_date(-days);
+  return d2;
+}
 
 #endif /* STM32XX_DATE_HPP_INCLUDED */
 // vim: set expandtab tabstop=2 shiftwidth=2:

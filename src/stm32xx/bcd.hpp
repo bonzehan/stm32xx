@@ -20,10 +20,10 @@
  * DEALINGS IN THE SOFTWARE
  */
 
-// stm32/bcd.hpp
+// stm32xx/bcd.hpp
 
-/** // doc: stm32/bcd.hpp {{{ 
- * @file stm32/bcd.hpp
+/** // doc: stm32xx/bcd.hpp {{{ 
+ * @file stm32xx/bcd.hpp
  * @todo Write documentation
  */ // }}}
 #ifndef STM32XX_BCD_HPP_INCLUDED

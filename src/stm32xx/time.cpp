@@ -28,78 +28,21 @@
 
 namespace stm32xx {
 
-void time::
-set_hour(hour_t h)
+bool time::
+inc_time() noexcept
 {
-  const sec_cnt_t tail = (h * hour_secs) + (this->_M_sec_cnt % hour_secs);
-  this->_M_sec_cnt = this->_M_sec_cnt - (this->_M_sec_cnt % day_secs) + tail;
-}
-
-void time::
-set_min(min_t m)
-{
-  const sec_cnt_t tail = (m * min_secs) + (this->_M_sec_cnt % min_secs);
-  this->_M_sec_cnt = this->_M_sec_cnt - (this->_M_sec_cnt % hour_secs) + tail;
-}
-
-void time::
-set_sec(sec_t s)
-{
-  this->_M_sec_cnt = this->_M_sec_cnt - (this->_M_sec_cnt % min_secs) + s;
-}
-
-void time::
-dec_hour() noexcept
-{
-  if (this->hour() > 0)
-    this->_M_sec_cnt -= hour_secs;
-  else
-    this->_M_sec_cnt += (23 * hour_secs);
-}
-
-void time::
-inc_hour() noexcept
-{
-  if (this->hour() < 23)
-    this->_M_sec_cnt += hour_secs;
-  else
-    this->_M_sec_cnt -= (23 * hour_secs);
-}
-
-void time::
-dec_min() noexcept
-{
-  if (this->min() > 0)
-    this->_M_sec_cnt -= min_secs;
-  else
-    this->_M_sec_cnt += (59 * min_secs);
-}
-
-void time::
-inc_min() noexcept
-{
-  if (this->min() < 59)
-    this->_M_sec_cnt += min_secs;
-  else
-    this->_M_sec_cnt -= (59 * min_secs);
-}
-
-void time::
-dec_sec() noexcept
-{
-  if (this->sec() > 0)
-    this->_M_sec_cnt -= 1;
-  else
-    this->_M_sec_cnt += 59;
-}
-
-void time::
-inc_sec() noexcept
-{
-  if (this->sec() < 59)
-    this->_M_sec_cnt += 1;
-  else
-    this->_M_sec_cnt -= 59;
+  this->inc_sec();
+  if(this->sec() == 0)
+    {
+      this->inc_min();
+      if (this->min() == 0)
+        {
+          this->inc_hour();
+          if (this->hour() == 0)
+            return true;
+        }
+    }
+  return true;
 }
 
 } /* namespace stm32xx */
