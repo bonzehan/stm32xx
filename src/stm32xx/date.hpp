@@ -118,9 +118,10 @@ namespace stm32xx {
  *
  * <b>Other characteristics</b>
  *
- * Other date characteristics, such as day of the year or day of the week may
- * be computed from year, month and day of the month contained in date object.
- * The relevant methods are wday(), yday(), leap_year(), mdays().
+ * Other date characteristics, such as day number, day of the year or day of
+ * the week may be computed from year, month and day of the month contained in
+ * date object. The relevant methods are gday(), wday(), yday(), leap_year(),
+ * mdays().
  *
  * <b>Initialization and modification</b>
  *
@@ -139,7 +140,7 @@ namespace stm32xx {
  * @endcode
  *
  * @note Dates before Oct 15, 1582 are regarded as invalid, and are rounded by
- * clamp_date() to Oct 15, 1582..
+ * clamp_date() to Oct 15, 1582.
  *
  * The date may also be modified by using inc_year(), dec_year(), inc_mon(),
  * dec_mon(), inc_mday(), dec_mday() methods. They may be used to implement
@@ -184,9 +185,9 @@ namespace stm32xx {
  *
  * - at each second do:
  * @code
- * date d(restore_date() + RTC->CNT/86400);
+ * date d(date::from_rtc_dr(restore_date()) + RTC->CNT/86400);
  * RTC->CNT = RTC_CNT % 86400;
- * store_date(d.gday());
+ * store_date(d.to_rtc_dr());
  * @endcode
  * where @c restore_date() is some function that reads date stored in RTC
  * backup registers and store_date() does the opposite.
@@ -197,15 +198,15 @@ namespace stm32xx {
  * - at startup do:
  *   @code
  *   // d is a static object.
- *   d.set_date(restore_date() + RTC->CNT/86400);
+ *   d.set_date(date::from_rtc_dr(restore_date()) + RTC->CNT/86400);
  *   RTC->CNT = RTC->CNT % 86400;
- *   store_date(d.gday());
+ *   store_date(d.to_rtc_dr());
  *   @endcode
  * - at each midnight do:
  *   @code
  *   d.inc_date();
  *   RTC->CNT -= 86400;
- *   store_date(d.gday());
+ *   store_date(d.to_rtc_dr());
  *   @endcode
  *
  * <b>Devices with hardware clock/calendar</b>:
@@ -220,13 +221,13 @@ namespace stm32xx {
  * time update, for example. For such cases the initialization of stm32xx::date
  * simplifies to:
  * @code
- * date d(from_rtc_dr(RTC->DR,2000)); // subtract 2000 from value being stored
+ * date d(from_rtc_dr(RTC->DR,2000)); // add 2000 to register value 
  * @endcode
  * Storing modified date is also easy:
  * @code
  * // for appropriate mask see reference manual for your target MCU, 
  * // this example is for STM32F4xx.
- * RTC->DR = d.to_rtc_dr(2000) & 0x00FFFF3Ful;
+ * RTC->DR = d.to_rtc_dr(2000) & 0x00FFFF3Ful; // subtract 2000 when storing
  * @endcode
  * The stm32xx::date class is able to convert date from and to the format
  * compatible with RTC_DR register. The relevant methods are from_rtc_dr() and
@@ -235,8 +236,8 @@ namespace stm32xx {
  * <b>Support for Daylight Saving Time changes</b>:
  *
  * These methods may be used to determine when the summer and winter time
- * starts: dst_summer_gday(), dst_winter_gday(), dst_summer_gday(int32_t),
- * dst_winter_gday(int32_t).
+ * starts: dst_summer_yday(), dst_winter_yday(), dst_summer_yday(int32_t),
+ * dst_winter_yday(int32_t).
  *
  * <b>Converting to BCD codes</b>
  *
@@ -887,8 +888,8 @@ public: /* static methods */
   {
     return ((y%400) == 0) ? 1: (((y%100) == 0) ? 0: ((y%4)==0) ? 1 : 0);
   }
-  /** // doc: dst_summer_gday(y) {{{
-   * @fn int32_t dst_summer_gday(int32_t)
+  /** // doc: dst_summer_yday(y) {{{
+   * @fn int32_t dst_summer_yday(int32_t)
    * @brief Determine the first day of summer time of year @c y.
    * @param y year, an integer value
    * @return day number of the first day of summer time of year @c y, relative
@@ -900,8 +901,8 @@ public: /* static methods */
     // FIXME: this rule shouldn't be hardcoded (it works for EU, not for others)
     return find_wday(gday(y,4,1), wday_sun, -1) - gday(y,1,1);
   }
-  /** // doc: dst_winter_gday(y) {{{
-   * @fn int32_t dst_winter_gday(int32_t)
+  /** // doc: dst_winter_yday(y) {{{
+   * @fn int32_t dst_winter_yday(int32_t)
    * @brief Determine the first day of winter time of year @c y.
    * @param y year, an integer value
    * @return day number of the first day of winter time of year @c y, relative
