@@ -224,11 +224,11 @@ elif sconscript_target == 'unit-test':
     #
     # SOURCES
     #
-    subdirs = ['src', 'tpl']
     sources = [ env.File('test/unit/run_tests.cpp'),
                 env.Glob('test/unit/stm32xx/*_test.cpp'),
                 env.Glob('src/stm32xx/*.cpp'),
-                env.Glob('src/stm32xx/*.c') ]
+                env.Glob('src/stm32xx/*.c'),
+                'test/unit/gtest/src/gtest-all.cc']
     sources = Flatten(sources)
     #
     # TEST RUNNER NAME
@@ -241,7 +241,22 @@ elif sconscript_target == 'unit-test':
     #        and we should have the unit-tests compiled for and run on 
     #        target boards
     ovrr2 = ovrr.copy()
-    ovrr2['LIBS'] += ['CppUTest']
+    #
+    # CPPPATH
+    #
+    ovrr2['CPPPATH'] += ['test/unit/gtest/include','test/unit/gtest']
+    #
+    # CFLAGS
+    #
+    ovrr2['CFLAGS'] += ['-pthread', '-Wno-missing-field-initializers']
+    #
+    # CFLAGS
+    #
+    ovrr2['CXXFLAGS'] += ['-pthread', '-Wno-missing-field-initializers']
+    #
+    # LIBS
+    #
+    ovrr2['LIBS'] += ['CppUTest','pthread']
     ovrr2.update({
         'CXX'  : 'g++',
         'CC'   : 'gcc',

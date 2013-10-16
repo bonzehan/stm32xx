@@ -32,6 +32,7 @@ namespace stm32xx {
 date date::
 from_gday(gday_t g) noexcept
 {
+  // http://alcor.concordia.ca/~gpkatch/gdate-c.html
   int32_t ddd, mi, y, m, d;
   g += 578040; // Compensate offset introduced in gday().
   y = (10000 * (int64_t)g + 14780) / 3652425;

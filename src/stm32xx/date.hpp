@@ -280,6 +280,43 @@ public: /* types */
   /// Signed integer used to represent day count (since 0000:03:01).
   typedef int32_t gday_t;
 
+  /** // doc: dst_rule {{{
+   * @todo Write documentation
+   */ // }}}
+  struct dst_rule
+    {
+      /** // doc: wday {{{
+       * @todo Write documentation
+       */ // }}}
+      wday_t wday;
+      /** // doc: mon {{{
+       * @todo Write documentation
+       */ // }}}
+      mon_t  mon;
+      /** // doc: mday {{{
+       * @todo Write documentation
+       */ // }}}
+      mday_t mday;
+      /** // doc: offset {{{
+       * @todo Write documentation
+       */ // }}}
+      mday_t offset;
+      /** // doc: dst_rule(w,m,d,o) {{{
+       * @todo Write documentation
+       */ // }}}
+      constexpr dst_rule(wday_t w, mon_t m, mday_t d, mday_t o) 
+        : wday(w), mon(m), mday(d), offset(o)
+      { }
+      /** // doc: operator() (y) {{{
+       * @todo Write documentation
+       */ // }}}
+      constexpr int32_t operator()(int32_t y)
+      {
+        return find_wday(this->wday,gday(y,this->mon,this->mday))
+             + this->offset - gday(y,1,1);
+      }
+    };
+
 public: /* member methods */
   /** // doc: date() {{{
    * @brief Default constructor
@@ -899,7 +936,7 @@ public: /* static methods */
   constexpr static int32_t dst_summer_yday(int32_t y) noexcept
   {
     // FIXME: this rule shouldn't be hardcoded (it works for EU, not for others)
-    return find_wday(gday(y,4,1), wday_sun, -1) - gday(y,1,1);
+    return find_wday(wday_sun, gday(y,4,1)) - 7 - gday(y,1,1);
   }
   /** // doc: dst_winter_yday(y) {{{
    * @fn int32_t dst_winter_yday(int32_t)
@@ -912,45 +949,32 @@ public: /* static methods */
   constexpr static int32_t dst_winter_yday(int32_t y) noexcept
   {
     // FIXME: this rule shouldn't be hardcoded (it works for EU, not for others)
-    return find_wday(gday(y,11,1), wday_sun, -1) - gday(y,1,1);
+    return find_wday(wday_sun, gday(y,11,1)) - 7 - gday(y,1,1);
   }
-  /** // doc: find_wday(g, w, n) {{{
+  /** // doc: find_wday(w, g) {{{
    * @brief Find particular day of week in calendar.
-   * @param g Lilian Day Number of the search base,
    * @param w day of the week to find
-   * @param n number of weeks to add to the result
+   * @param g Lilian Day Number of the search base,
    * @return Lilian Day Number of the day found
    *
-   * Given a Lilian Day Number of a base day and the name of week day, this
+   * Given a name of day of week and Lilian Date of a search base day, this
    * method searches forward for that week day.
    *
    * <b>Examples</b>:
    *
    * 1. Find first Friday of Oct, 2013:
    *    @code
-   *    find_wday(gday(2013,10,1), wday_fri);     // -> Oct 4, 2013
+   *    find_wday(wday_fri, gday(2013,10,1)); // -> Oct 4, 2013
    *    @endcode
    * 2. Find second Friday of Oct, 2013:
    *    @code
-   *    find_wday(gday(2013,10,1), wday_fri, 1);  // -> Oct 11, 2013
-   *    @endcode
-   * 3. Find last Sunday of October, 2013:
-   *    @code
-   *    find_wday(gday(2013,11,1), wday_fri,-1);  // -> Oct 27, 2013
-   *    @endcode
-   * 4. Find nearest Friday, starting from Oct 4, 2013:
-   *    @code
-   *    find_wday(gday(2013,10,4), wday_fri);     // -> Oct 4, 2013
-   *    @endcode
-   * 5. Find Friday prior to Oct 4, 2013:
-   *    @code
-   *    find_wday(gday(2013,10,4), wday_fri, -1); // -> Sep 27, 2013
+   *    find_wday(wday_fri, gday(2013,10,4)); // -> Oct 11, 2013
    *    @endcode
    */ // }}}
   constexpr static int32_t
-  find_wday(int32_t g, wday_t w, int32_t n = 0) noexcept
+  find_wday(wday_t w, int32_t g) noexcept
   {
-    return g + ((7 + w - wday(g)) % 7) + 7 * n;
+    return g + ((7 + w - wday(g)) % 7);
   }
   /** // doc: clamp_year(y) {{{
    * @brief Correct year if out of range.
