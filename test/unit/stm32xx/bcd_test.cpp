@@ -24,6 +24,7 @@
  * @file test/unit/stm32xx/bcd_test.cpp
  * @todo Write documentation
  */ // }}}
+#if 0
 #include <stm32xx/date.hpp>
 #include <CppUTest/TestHarness.h>
 
@@ -121,6 +122,6 @@ TEST(stm32xx__bcd, bcdp__4__decode__1234)
 {
   CHECK_EQUAL(1234, stm32xx::bcdp<4>::decode(0x1234));
 };
-
+#endif
 // vim: set expandtab tabstop=2 shiftwidth=2:
 // vim: set foldmethod=marker foldcolumn=4:

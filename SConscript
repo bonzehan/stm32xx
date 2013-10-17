@@ -224,11 +224,13 @@ elif sconscript_target == 'unit-test':
     #
     # SOURCES
     #
-    sources = [ env.File('test/unit/run_tests.cpp'),
-                env.Glob('test/unit/stm32xx/*_test.cpp'),
+#    sources = [ env.File('test/unit/run_tests.cpp'),
+#                env.Glob('test/unit/stm32xx/*_test.cpp'),
+#                env.Glob('src/stm32xx/*.cpp'),
+#                env.Glob('src/stm32xx/*.c')]
+    sources = [ env.Glob('test/unit/stm32xx/*.t.h'),
                 env.Glob('src/stm32xx/*.cpp'),
-                env.Glob('src/stm32xx/*.c'),
-                'test/unit/gtest/src/gtest-all.cc']
+                env.Glob('src/stm32xx/*.c') ]
     sources = Flatten(sources)
     #
     # TEST RUNNER NAME
@@ -237,9 +239,6 @@ elif sconscript_target == 'unit-test':
     #
     # BUILD THE TEST RUNNER
     #
-    # FIXME: this shouldn't be hardcoded; also this should be arm compiler
-    #        and we should have the unit-tests compiled for and run on 
-    #        target boards
     ovrr2 = ovrr.copy()
     #
     # CPPPATH
@@ -248,22 +247,23 @@ elif sconscript_target == 'unit-test':
     #
     # CFLAGS
     #
-    ovrr2['CFLAGS'] += ['-pthread', '-Wno-missing-field-initializers']
+    ovrr2['CFLAGS'] += ['-Wno-missing-field-initializers']
     #
     # CFLAGS
     #
-    ovrr2['CXXFLAGS'] += ['-pthread', '-Wno-missing-field-initializers']
+    ovrr2['CXXFLAGS'] += ['-Wno-missing-field-initializers']
     #
     # LIBS
     #
-    ovrr2['LIBS'] += ['CppUTest','pthread']
+    #ovrr2['LIBS'] += ['CppUTest','pthread']
     ovrr2.update({
         'CXX'  : 'g++',
         'CC'   : 'gcc',
         'LINK' : 'g++',
         'AR'   : 'ar',
     })
-    target = env.Program(progname, sources, **ovrr2)
+    #target = env.Program(progname, sources, **ovrr2)
+    target = env.CxxTest(progname, sources, **ovrr2)
 else:
     msg = 'Unsupported SCONSCRIPT_TARGET: %s' % sconscript_target
     raise SCons.Errors.UserError(msg)

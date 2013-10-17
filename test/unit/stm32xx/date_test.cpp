@@ -24,6 +24,7 @@
  * @file test/unit/stm32xx/date_test.cpp
  * @todo Write documentation
  */ // }}}
+#if 0
 #include <stm32xx/date.hpp>
 #include <CppUTest/TestHarness.h>
 
@@ -522,5 +523,6 @@ TEST_from_gday(917933, 4095,12,31);
 
 TEST_from_rtc_dr(0x20134101, 2013, 1, 1);
 TEST_from_rtc_dr(0x20135231, 2013,12,31);
+#endif
 // vim: set expandtab tabstop=2 shiftwidth=2:
 // vim: set foldmethod=marker foldcolumn=4:

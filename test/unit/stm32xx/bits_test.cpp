@@ -20,6 +20,7 @@
  * DEALINGS IN THE SOFTWARE
  */
 
+#if 0
 /** // doc: test/unit/stm32xx/bits_test.cpp {{{
  * @file test/unit/stm32xx/bits_test.cpp
  * @todo Write documentation
@@ -113,5 +114,7 @@ TEST(stm32xx__bits__ct, modify_modifies_only_masked_bits)
   modify<bits>::in(var);
   CHECK_EQUAL(var, 0x12345678ul);
 }
+#endif
+
 // vim: set expandtab tabstop=2 shiftwidth=2:
 // vim: set foldmethod=marker foldcolumn=4:

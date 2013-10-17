@@ -24,6 +24,7 @@
  * @file test/unit/stm32xx/gpio_test.cpp
  * @todo Write documentation
  */ // }}}
+#if 0
 #include <stm32xx/gpio.hpp>
 #include <CppUTest/TestHarness.h>
 
@@ -953,5 +954,6 @@ TEST(stm32xx__gpio__ct, configure_gpio__3)
 #endif
 
 #endif /* _HAVE_GPIO_CRL_REGISTER */
+#endif
 // vim: set expandtab tabstop=2 shiftwidth=2:
 // vim: set foldmethod=marker foldcolumn=4:

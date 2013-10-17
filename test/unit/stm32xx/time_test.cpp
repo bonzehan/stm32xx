@@ -24,6 +24,7 @@
  * @file test/unit/stm32xx/time_test.cpp
  * @todo Write documentation
  */ // }}}
+#if 0
 #include <stm32xx/time.hpp>
 #include <CppUTest/TestHarness.h>
 
@@ -370,6 +371,6 @@ TEST(stm32xx__time, advance_time)
   TEST_advance_time(10, 0, 0, 86400,   1,10, 0, 0);
   TEST_advance_time(10, 0, 0,-86400,  -1,10, 0, 0);
 }
-
+#endif
 // vim: set expandtab tabstop=2 shiftwidth=2:
 // vim: set foldmethod=marker foldcolumn=4:

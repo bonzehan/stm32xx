@@ -24,6 +24,7 @@
  * @file test/unit/stm32xx/datetime_test.cpp
  * @todo Write documentation
  */ // }}}
+#if 0
 #include <stm32xx/datetime.hpp>
 #include <CppUTest/TestHarness.h>
 
@@ -145,6 +146,6 @@ TEST_dst_update(2013,10,27, 3, 0, 0, false, 2013,10,27, 3);
 TEST_dst_update(2013,10,27, 3, 0, 0, true,  2013,10,27, 2);
 TEST_dst_update(2013,12,31, 1, 0, 0, false, 2013,12,31, 1);
 TEST_dst_update(2013,12,31, 1, 0, 0, true,  2013,12,31, 0);
-
+#endif
 // vim: set expandtab tabstop=2 shiftwidth=2:
 // vim: set foldmethod=marker foldcolumn=4:
