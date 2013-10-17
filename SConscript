@@ -224,10 +224,6 @@ elif sconscript_target == 'unit-test':
     #
     # SOURCES
     #
-#    sources = [ env.File('test/unit/run_tests.cpp'),
-#                env.Glob('test/unit/stm32xx/*_test.cpp'),
-#                env.Glob('src/stm32xx/*.cpp'),
-#                env.Glob('src/stm32xx/*.c')]
     sources = [ env.Glob('test/unit/stm32xx/*.t.h'),
                 env.Glob('src/stm32xx/*.cpp'),
                 env.Glob('src/stm32xx/*.c') ]

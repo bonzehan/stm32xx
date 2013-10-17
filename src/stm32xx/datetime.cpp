@@ -29,8 +29,9 @@
 namespace stm32xx {
 
 int32_t datetime::
-dst_update() noexcept
+dst_update() const noexcept
 {
+  /* FIXME: this transition time (2*hour_secs) should not be hard-coded */
   const int32_t summer_ts = day_secs * dst_summer_yday() + 2*hour_secs;
   const int32_t winter_ts = day_secs * dst_winter_yday() + 2*hour_secs;
   const int32_t s = day_secs * yday() + sec_cnt();
@@ -60,10 +61,10 @@ dst_update() noexcept
       /* Summer time */
       if((flags() & summer_time)==0)
         {
-          this->advance_datetime(+hour_secs);
           /* From now on, we have summer time */
-          set_flags(flags() | summer_time);
-          return 1;
+          //set_flags(flags() | summer_time);
+          //this->advance_datetime(+hour_secs);
+          return hour_secs;
         }
     }
   else if(is_winter)
@@ -71,10 +72,10 @@ dst_update() noexcept
       /* Winter time */
       if((flags() & summer_time)!=0)
         {
-          this->advance_datetime(-hour_secs);
+          //this->advance_datetime(-hour_secs);
           /* From now on, we have winter time */
-          set_flags(flags() & ~summer_time);
-          return -1;
+          //set_flags(flags() & ~summer_time);
+          return -hour_secs;
         }
     }
 

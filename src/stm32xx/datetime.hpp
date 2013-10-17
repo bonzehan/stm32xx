@@ -51,29 +51,6 @@ public: /* member methods */
   constexpr datetime()
     : date(), time(), _M_flags(0)
   { }
-  /** // doc: datetime(y,m,d, c) {{{
-   * @brief Constructor
-   * @todo Write documentation
-   */ // }}}
-  constexpr datetime(year_t y, mon_t m, mday_t d, sec_cnt_t c, flag_t f=0)
-    : date(y,m,d), time(c), _M_flags(f)
-  { }
-  /** // doc: datetime(y,m,d, h,mn,s) {{{
-   * @brief Constructor
-   * @todo Write documentation
-   */ // }}}
-  constexpr datetime(year_t y, mon_t m, mday_t d, hour_t h, min_t mn, sec_t s,
-                     flag_t f=0)
-    : date(y,m,d), time(h,mn,s), _M_flags(f)
-  { }
-  /** // doc: datetime(y,m,d, h,mn,s) {{{
-   * @brief Constructor
-   * @todo Write documentation
-   */ // }}}
-  constexpr datetime(year_t y, mon_t m, mday_t d, hour_t h, min_t mn, sec_t s,
-                     bool pm, flag_t f=0)
-    : date(y,m,d), time(h,mn,s,pm), _M_flags(f)
-  { }
   /** // doc: datetime(d,t) {{{
    * @brief Constructor
    * @todo Write documentation
@@ -112,7 +89,7 @@ public: /* member methods */
    * - @c  1 if time has been changed from winter to summer (+1 hour),
    * - @c -1 if time has been changed from summer to winter (-1 hour).
    */ // }}}
-  int32_t dst_update() noexcept;
+  int32_t dst_update() const noexcept;
 protected: /* member data */
   flag_t _M_flags;
 
