@@ -81,19 +81,55 @@ public: /* member methods */
     this->advance_date(this->advance_time(s));
   }
   /** // doc: dst_update() {{{
-   * @brief Apply Daylight Saving Time update.
-   * @return the number of hours added to current time.
-   *
-   * The returned value is:
-   * - @c  0 if time is left unchanged (this is for most cases),
-   * - @c  1 if time has been changed from winter to summer (+1 hour),
-   * - @c -1 if time has been changed from summer to winter (-1 hour).
+   * @todo Write documentation for dst_update()
+   */ // }}}
+  int32_t dst_update(int32_t dst_s, int32_t std_s, int32_t s) const noexcept;
+  /** // doc: dst_update() {{{
+   * @todo Write documentation for dst_udpate().
+   */ // }}}
+  inline int32_t dst_update(int32_t dst_s, int32_t std_s) const noexcept
+  {
+    return dst_update(dst_s, std_s, day_secs*yday() + sec_cnt());
+  }
+  /** // doc: dst_update() {{{
+   * @todo Write documentation for dst_udpate().
    */ // }}}
   int32_t dst_update() const noexcept;
 protected: /* member data */
   flag_t _M_flags;
 
 public: /* static methods */
+  /** // doc: dst_update(dst_s, std_s, ys, dst) {{{
+   * @todo Write documentation for dst_udpate().
+   *
+   * @param dst_s the time at which transition to DST (summer) time should be
+   * triggered (zero-based second of a year); zero for Jan 1, 00:00:00.
+   * @param std_s the time at which standard (winter) time starts (zero-based
+   * second of a year); zero for Jan 1, 00:00:00.
+   * @param s current time (zero based second of a year)
+   * @param dst daylight saving time flag, @c true if DST time is currently
+   * used (by a clock invoking this method), @c false otherwise.
+   *
+   * The value of @c s should be computed as:
+   * @code
+   * int32_t s = day_secs * yday() + sec_cnt()
+   * @endcode
+   * The quantities @c dst_s and @c std_s should be computed taking into
+   * account transition date (relative to the Jan 1'st) and the transition
+   * daytime, for example:
+   * example:
+   * @code
+   * // transition from CET to CEST (winter to summer in Poland, for example)
+   * dst_rule dst_day(wday_sun,4,1,-7);
+   * int32_t dst_s = day_secs * dst_day(2013) + 2 * hour_secs;
+   * @endcode
+   *
+   * @returns time offset (in seconds) necessary to account time update; this
+   * shall be zero most of the time (no update needed), positive value when
+   * transition to DST (summer) time is pending, or negative when transition to
+   * STD (winter) time is pending.
+   */ // }}}
+  static int32_t dst_update(int32_t dst_s, int32_t std_s, int32_t s, bool dst);
 };
 
 } /* namespace stm32xx */

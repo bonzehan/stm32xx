@@ -281,39 +281,84 @@ public: /* types */
   typedef int32_t gday_t;
 
   /** // doc: dst_rule {{{
-   * @todo Write documentation
+   * @brief Defines rules used to determine transition dates between daylight
+   * saving time (DST) and standard time (STD).
+   *
+   * The transition day is expressed by the following information 
+   * - day of week (wday),
+   * - month (mon),
+   * - day of the month (mday),
+   * - offset in days,
+   *
+   * With these pieces of information the transition day may be defined as "the
+   * last Sunday of October", for example. This is usual way used to describe
+   * the transition day in most countries. The eval() method or operator() may
+   * be used to determine transition date in a given year.
+   *
+   * <b>Example</b>:
+   * @code
+   * using namespace stm32xx;
+   * date::dst_rule dr(wday_sun, 11, 1, -7); // last Sunday of October
+   * int32_t g = dr(2013);                   // in year 2013
+   * @endcode
    */ // }}}
   struct dst_rule
     {
       /** // doc: wday {{{
-       * @todo Write documentation
+       * @brief Day of week.
        */ // }}}
       wday_t wday;
       /** // doc: mon {{{
-       * @todo Write documentation
+       * @brief Month.
        */ // }}}
       mon_t  mon;
       /** // doc: mday {{{
-       * @todo Write documentation
+       * @brief Day of the month.
        */ // }}}
       mday_t mday;
       /** // doc: offset {{{
-       * @todo Write documentation
+       * @brief Day offset.
        */ // }}}
       mday_t offset;
       /** // doc: dst_rule(w,m,d,o) {{{
-       * @todo Write documentation
+       * @brief Constructor
+       *
+       * @param w week day,
+       * @param m month,
+       * @param d day of the month,
+       * @param o offset in days (may be negative)
        */ // }}}
       constexpr dst_rule(wday_t w, mon_t m, mday_t d, mday_t o) 
         : wday(w), mon(m), mday(d), offset(o)
       { }
       /** // doc: operator() (y) {{{
-       * @todo Write documentation
+       * @brief Determine transition date in year @c y.
+       *
+       * The method takes year @c y as an argument and determines date
+       * described by year @c y, month @ref mon, day of month @ref mday, day of
+       * week @ref wday and @ref offset. The algorithm used to determine this
+       * date is to find the week day @ref wday next to the date {@c y}-{@ref
+       * mon}-{@ref mday} (see @ref find_wday()) and then add @ref offset to
+       * this date. The returned value is a day number reative to the beginning
+       * of the year @c y (0 for Jan 1st).
+       *
+       * @param y year,
+       *
+       * @returns day of the year (zero based number) of the resultant date.
        */ // }}}
-      constexpr int32_t operator()(int32_t y)
+      constexpr int32_t eval(int32_t y) const noexcept
       {
         return find_wday(this->wday,gday(y,this->mon,this->mday))
              + this->offset - gday(y,1,1);
+      }
+      /** // doc: operator() (y) {{{
+       * @brief Determine transition date in year @c y.
+       *
+       * This is just convenience shortcut to eval().
+       */ // }}}
+      constexpr int32_t operator()(int32_t y) const noexcept
+      {
+        return this->eval(y);
       }
     };
 

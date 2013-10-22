@@ -505,5 +505,35 @@ public:
   }
 };
 
+class stm32xx__date__dst_rule__testsuite : public CxxTest::TestSuite
+{
+public:
+  void test__dst_rule(void)
+  {
+    using date = stm32xx::date;
+    date::dst_rule dr(date::wday_sun, 11, 1, -7); 
+    TS_ASSERT_EQUALS(date::wday_sun, dr.wday);
+    TS_ASSERT_EQUALS(dr.mon,    11);
+    TS_ASSERT_EQUALS(dr.mday,    1);
+    TS_ASSERT_EQUALS(dr.offset, -7);
+  }
+
+  void test__eval(void)
+  {
+    using dst_rule = stm32xx::date::dst_rule;
+    using date = stm32xx::date;
+    TS_ASSERT_EQUALS(dst_rule(date::wday_sun,4,1,-7).eval(2013),   89); 
+    TS_ASSERT_EQUALS(dst_rule(date::wday_sun,11,1,-7).eval(2013), 299); 
+  }
+
+  void test__brace_operator(void)
+  {
+    using dst_rule = stm32xx::date::dst_rule;
+    using date = stm32xx::date;
+    TS_ASSERT_EQUALS(dst_rule(date::wday_sun,4,1,-7)(2013),   89); 
+    TS_ASSERT_EQUALS(dst_rule(date::wday_sun,11,1,-7)(2013), 299); 
+  }
+};
+
 // vim: set expandtab tabstop=2 shiftwidth=2:
 // vim: set foldmethod=marker foldcolumn=4:

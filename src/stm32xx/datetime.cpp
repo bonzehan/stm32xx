@@ -29,57 +29,68 @@
 namespace stm32xx {
 
 int32_t datetime::
-dst_update() const noexcept
+dst_update(int32_t dst_s, int32_t std_s, int32_t s, bool dst)
 {
-  /* FIXME: this transition time (2*hour_secs) should not be hard-coded */
-  const int32_t summer_ts = day_secs * dst_summer_yday() + 2*hour_secs;
-  const int32_t winter_ts = day_secs * dst_winter_yday() + 2*hour_secs;
-  const int32_t s = day_secs * yday() + sec_cnt();
-  bool is_summer;
-  bool is_winter;
+  bool is_dst;
+  bool is_std;
 
-  /* The transition from summer to winter time (-1 hour) is tricky, because
-   * one hour repeats once as summer time and once as winter time. To avoid
-   * flapping between winter and summer time during this period, we exclude it
-   * from consiteration. This is why there is 1 hour gap between "is_summer"
-   * and "is_winter". */
-  if (summer_ts < winter_ts)
+  /* The transition from DST to STD time (-1 hour) is tricky. One hour repeats
+   * once as DST time and once as STD time. To avoid flapping between DST
+   * and STD time during this period, we exclude it from consiteration. This
+   * is why there is 1 hour gap between "is_dst"
+   * and "is_std". */
+  if (dst_s < std_s)
     {
       /* Noth semisphere */
-      is_summer = (s >= summer_ts && s < winter_ts);
-      is_winter = (s < summer_ts  || s >= (winter_ts+hour_secs));
+      is_dst = (s >= dst_s && s < std_s);
+      is_std = (s < dst_s  || s >= (std_s+hour_secs));
     }
   else
     {
       /* South semisphere */
-      is_summer = (s >= summer_ts || s < winter_ts);
-      is_winter = (s < summer_ts  && s >= (winter_ts+hour_secs)); 
+      is_dst = (s >= dst_s || s < std_s);
+      is_std = (s < dst_s  && s >= (std_s+hour_secs)); 
     }
 
-  if(is_summer)
+  if(is_dst)
     {
       /* Summer time */
-      if((flags() & summer_time)==0)
+      if(!dst)
         {
-          /* From now on, we have summer time */
+          /* From now on, we have dst_s time */
           //set_flags(flags() | summer_time);
           //this->advance_datetime(+hour_secs);
           return hour_secs;
         }
     }
-  else if(is_winter)
+  else if(is_std)
     {
       /* Winter time */
-      if((flags() & summer_time)!=0)
+      if(dst)
         {
           //this->advance_datetime(-hour_secs);
-          /* From now on, we have winter time */
+          /* From now on, we have std_s time */
           //set_flags(flags() & ~summer_time);
           return -hour_secs;
         }
     }
 
   return 0;
+}
+
+int32_t datetime::
+dst_update(int32_t dst_s, int32_t std_s, int32_t s) const noexcept
+{
+  return dst_update(dst_s, std_s, s, ((flags() & summer_time)!=0));
+}
+
+int32_t datetime::
+dst_update() const noexcept
+{
+  /* FIXME: this transition time (2*hour_secs) should not be hard-coded */
+  const int32_t dst_s = day_secs * dst_summer_yday() + 2*hour_secs;
+  const int32_t std_s = day_secs * dst_winter_yday() + 2*hour_secs;
+  return dst_update(dst_s, std_s);
 }
 
 } /* namespace stm32xx */
