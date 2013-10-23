@@ -166,10 +166,10 @@ namespace stm32xx {
  *
  * <b>Support for RTC timers</b>
  *
- * @note The following description only shows how to handle date, isolated
- * from daytime information. Instructions regarding complete information
- * (including date and daytime) may be found in documentation of
- * stm32xx::datetime.
+ * @note The following description only shows how to handle date (year, month,
+ * day) - the daytime is not considered here. Instructions regarding complete
+ * information (including date and daytime) may be found in the documentation
+ * of stm32xx::datetime.
  *
  * There are several ways to implement RTC-based calendar with stm32xx::date.
  *

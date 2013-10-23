@@ -36,7 +36,7 @@ public:
     using date = stm32xx::date;
     using time = stm32xx::time;
     using datetime = stm32xx::datetime;
-    const datetime::flag_t f = (dst ? datetime::summer_time : 0x00);
+    const datetime::flag_t f = (dst ? datetime::flag_isdst : 0x00);
     TS_ASSERT_EQUALS(datetime(date(y,m,d),time(h,mn,s),f).dst_update(), res); 
   }
   

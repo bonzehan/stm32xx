@@ -31,28 +31,27 @@ namespace stm32xx {
 int32_t datetime::
 dst_update(int32_t dst_s, int32_t std_s, int32_t s, bool dst)
 {
-  bool is_dst;
-  bool is_std;
+  bool is_summer;
+  bool is_winter;
 
   /* The transition from DST to STD time (-1 hour) is tricky. One hour repeats
    * once as DST time and once as STD time. To avoid flapping between DST
    * and STD time during this period, we exclude it from consiteration. This
-   * is why there is 1 hour gap between "is_dst"
-   * and "is_std". */
+   * is why there is 1 hour gap between "is_summer" and "is_winter". */
   if (dst_s < std_s)
     {
       /* Noth semisphere */
-      is_dst = (s >= dst_s && s < std_s);
-      is_std = (s < dst_s  || s >= (std_s+hour_secs));
+      is_summer = (s >= dst_s && s < std_s);
+      is_winter = (s < dst_s  || s >= (std_s+hour_secs));
     }
   else
     {
       /* South semisphere */
-      is_dst = (s >= dst_s || s < std_s);
-      is_std = (s < dst_s  && s >= (std_s+hour_secs)); 
+      is_summer = (s >= dst_s || s < std_s);
+      is_winter = (s < dst_s  && s >= (std_s+hour_secs)); 
     }
 
-  if(is_dst)
+  if(is_summer)
     {
       /* Summer time */
       if(!dst)
@@ -63,7 +62,7 @@ dst_update(int32_t dst_s, int32_t std_s, int32_t s, bool dst)
           return hour_secs;
         }
     }
-  else if(is_std)
+  else if(is_winter)
     {
       /* Winter time */
       if(dst)
@@ -76,12 +75,6 @@ dst_update(int32_t dst_s, int32_t std_s, int32_t s, bool dst)
     }
 
   return 0;
-}
-
-int32_t datetime::
-dst_update(int32_t dst_s, int32_t std_s, int32_t s) const noexcept
-{
-  return dst_update(dst_s, std_s, s, ((flags() & summer_time)!=0));
 }
 
 int32_t datetime::

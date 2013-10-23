@@ -35,7 +35,11 @@
 namespace stm32xx {
 
 /** // doc: datetime {{{
- * @todo Write documentation for datetime.
+ * @brief Represent and/or manipulate date and time.
+ *
+ * The stm32xx::datetime object may be used to represent and manipulate
+ * calendar date and daytime at once. The class inherits from stm32xx::date and
+ * stm32xx::time.
  */ // }}}
 class datetime
   : public date, public time
@@ -45,7 +49,7 @@ public: /* types */
   typedef uint8_t flag_t;
 public: /* constants */
   /// Summer time flag.
-  constexpr static flag_t summer_time = 0x01u; 
+  constexpr static flag_t flag_isdst = 0x01u; 
 public: /* member methods */
   /// Default constructor.
   constexpr datetime()
@@ -66,6 +70,10 @@ public: /* member methods */
    * @todo Write documentation for stm32xx::datetime::flags()
    */ // }}}
   inline void set_flags(flag_t f) noexcept { this->_M_flags = f; }
+  /** // doc: isdst() {{{
+   * @todo Write documentation for stm32xx::datetime::isdst()
+   */ // }}}
+  constexpr flag_t isdst() const noexcept { return this->_M_flags & flag_isdst; }
   /** // doc: advance_datetime(s) {{{
    * @brief Add @c s seconds to current time modifying date if necessary.
    *
@@ -81,15 +89,11 @@ public: /* member methods */
     this->advance_date(this->advance_time(s));
   }
   /** // doc: dst_update() {{{
-   * @todo Write documentation for dst_update()
-   */ // }}}
-  int32_t dst_update(int32_t dst_s, int32_t std_s, int32_t s) const noexcept;
-  /** // doc: dst_update() {{{
    * @todo Write documentation for dst_udpate().
    */ // }}}
   inline int32_t dst_update(int32_t dst_s, int32_t std_s) const noexcept
   {
-    return dst_update(dst_s, std_s, day_secs*yday() + sec_cnt());
+    return dst_update(dst_s, std_s, day_secs*yday() + sec_cnt(), isdst());
   }
   /** // doc: dst_update() {{{
    * @todo Write documentation for dst_udpate().
