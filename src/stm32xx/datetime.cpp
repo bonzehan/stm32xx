@@ -29,61 +29,12 @@
 namespace stm32xx {
 
 int32_t datetime::
-dst_update(int32_t dst_s, int32_t std_s, int32_t s, bool dst)
-{
-  bool is_summer;
-  bool is_winter;
-
-  /* The transition from DST to STD time (-1 hour) is tricky. One hour repeats
-   * once as DST time and once as STD time. To avoid flapping between DST
-   * and STD time during this period, we exclude it from consiteration. This
-   * is why there is 1 hour gap between "is_summer" and "is_winter". */
-  if (dst_s < std_s)
-    {
-      /* Noth semisphere */
-      is_summer = (s >= dst_s && s < std_s);
-      is_winter = (s < dst_s  || s >= (std_s+hour_secs));
-    }
-  else
-    {
-      /* South semisphere */
-      is_summer = (s >= dst_s || s < std_s);
-      is_winter = (s < dst_s  && s >= (std_s+hour_secs)); 
-    }
-
-  if(is_summer)
-    {
-      /* Summer time */
-      if(!dst)
-        {
-          /* From now on, we have dst_s time */
-          //set_flags(flags() | summer_time);
-          //this->advance_datetime(+hour_secs);
-          return hour_secs;
-        }
-    }
-  else if(is_winter)
-    {
-      /* Winter time */
-      if(dst)
-        {
-          //this->advance_datetime(-hour_secs);
-          /* From now on, we have std_s time */
-          //set_flags(flags() & ~summer_time);
-          return -hour_secs;
-        }
-    }
-
-  return 0;
-}
-
-int32_t datetime::
 dst_update() const noexcept
 {
   /* FIXME: this transition time (2*hour_secs) should not be hard-coded */
   const int32_t dst_s = day_secs * dst_summer_yday() + 2*hour_secs;
   const int32_t std_s = day_secs * dst_winter_yday() + 2*hour_secs;
-  return dst_update(dst_s, std_s);
+  return daytime::dst_update(dst_s, std_s, yday());
 }
 
 } /* namespace stm32xx */

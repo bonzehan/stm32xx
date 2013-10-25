@@ -30,7 +30,7 @@
 #define STM32XX_DATETIME_HPP_INCLUDED
 
 #include <stm32xx/date.hpp>
-#include <stm32xx/time.hpp>
+#include <stm32xx/daytime.hpp>
 
 namespace stm32xx {
 
@@ -39,43 +39,26 @@ namespace stm32xx {
  *
  * The stm32xx::datetime object may be used to represent and manipulate
  * calendar date and daytime at once. The class inherits from stm32xx::date and
- * stm32xx::time.
+ * stm32xx::daytime.
  */ // }}}
 class datetime
-  : public date, public time
+  : public date, public daytime
 {
-public: /* types */
-  /// Unsigned integer type used to represent flags
-  typedef uint8_t flag_t;
 public: /* constants */
-  /// Summer time flag.
-  constexpr static flag_t flag_isdst = 0x01u; 
 public: /* member methods */
   /// Default constructor.
   constexpr datetime()
-    : date(), time(), _M_flags(0)
+    : date(), daytime()
   { }
   /** // doc: datetime(d,t) {{{
    * @brief Constructor
    * @todo Write documentation
    */ // }}}
-  constexpr datetime(date d, time t, flag_t f=0)
-      : date(d), time(t), _M_flags(f)
+  constexpr datetime(date d, daytime t)
+      : date(d), daytime(t)
   { }
-  /** // doc: flags() {{{
-   * @todo Write documentation for stm32xx::datetime::flags()
-   */ // }}}
-  constexpr flag_t flags() const noexcept { return this->_M_flags; }
-  /** // doc: set_flags(f) {{{
-   * @todo Write documentation for stm32xx::datetime::flags()
-   */ // }}}
-  inline void set_flags(flag_t f) noexcept { this->_M_flags = f; }
-  /** // doc: isdst() {{{
-   * @todo Write documentation for stm32xx::datetime::isdst()
-   */ // }}}
-  constexpr flag_t isdst() const noexcept { return this->_M_flags & flag_isdst; }
   /** // doc: advance_datetime(s) {{{
-   * @brief Add @c s seconds to current time modifying date if necessary.
+   * @brief Add @c s seconds to current daytime modifying date if necessary.
    *
    * <b>Example</b>:
    * @code
@@ -86,54 +69,15 @@ public: /* member methods */
    */ // }}}
   inline void advance_datetime(int32_t s)
   {
-    this->advance_date(this->advance_time(s));
-  }
-  /** // doc: dst_update() {{{
-   * @todo Write documentation for dst_udpate().
-   */ // }}}
-  inline int32_t dst_update(int32_t dst_s, int32_t std_s) const noexcept
-  {
-    return dst_update(dst_s, std_s, day_secs*yday() + sec_cnt(), isdst());
+    this->advance_date(this->advance_daytime(s));
   }
   /** // doc: dst_update() {{{
    * @todo Write documentation for dst_udpate().
    */ // }}}
   int32_t dst_update() const noexcept;
 protected: /* member data */
-  flag_t _M_flags;
 
 public: /* static methods */
-  /** // doc: dst_update(dst_s, std_s, ys, dst) {{{
-   * @todo Write documentation for dst_udpate().
-   *
-   * @param dst_s the time at which transition to DST (summer) time should be
-   * triggered (zero-based second of a year); zero for Jan 1, 00:00:00.
-   * @param std_s the time at which standard (winter) time starts (zero-based
-   * second of a year); zero for Jan 1, 00:00:00.
-   * @param s current time (zero based second of a year)
-   * @param dst daylight saving time flag, @c true if DST time is currently
-   * used (by a clock invoking this method), @c false otherwise.
-   *
-   * The value of @c s should be computed as:
-   * @code
-   * int32_t s = day_secs * yday() + sec_cnt()
-   * @endcode
-   * The quantities @c dst_s and @c std_s should be computed taking into
-   * account transition date (relative to the Jan 1'st) and the transition
-   * daytime, for example:
-   * example:
-   * @code
-   * // transition from CET to CEST (winter to summer in Poland, for example)
-   * dst_rule dst_day(wday_sun,4,1,-7);
-   * int32_t dst_s = day_secs * dst_day(2013) + 2 * hour_secs;
-   * @endcode
-   *
-   * @returns time offset (in seconds) necessary to account time update; this
-   * shall be zero most of the time (no update needed), positive value when
-   * transition to DST (summer) time is pending, or negative when transition to
-   * STD (winter) time is pending.
-   */ // }}}
-  static int32_t dst_update(int32_t dst_s, int32_t std_s, int32_t s, bool dst);
 };
 
 } /* namespace stm32xx */

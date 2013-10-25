@@ -34,25 +34,25 @@ public:
                         int32_t s, bool dst, int32_t res)
   {
     using date = stm32xx::date;
-    using time = stm32xx::time;
+    using daytime = stm32xx::daytime;
     using datetime = stm32xx::datetime;
     const datetime::flag_t f = (dst ? datetime::flag_isdst : 0x00);
-    TS_ASSERT_EQUALS(datetime(date(y,m,d),time(h,mn,s),f).dst_update(), res); 
+    TS_ASSERT_EQUALS(datetime(date(y,m,d),daytime(h,mn,s,f)).dst_update(), res); 
   }
   
   void test__datetime(void)
   {
     using date = stm32xx::date;
-    using time = stm32xx::time;
+    using daytime = stm32xx::daytime;
     using datetime = stm32xx::datetime;
-    /* datetime(date(...), time(...)) */
-    TS_ASSERT_EQUALS(2013, datetime(date(2013,10,11),time(9,6,20,true)).year());
-    TS_ASSERT_EQUALS(10, datetime(date(2013,10,11),time(9,6,20,true)).mon());
-    TS_ASSERT_EQUALS(11, datetime(date(2013,10,11),time(9,6,20,true)).mday());
-    TS_ASSERT_EQUALS(9,  datetime(date(2013,10,11),time(9,6,20,true)).hour12());
-    TS_ASSERT_EQUALS(6,  datetime(date(2013,10,11),time(9,6,20,true)).min());
-    TS_ASSERT_EQUALS(20, datetime(date(2013,10,11),time(9,6,20,true)).sec());
-    TS_ASSERT(datetime(date(2013,10,11),time(9,6,20,true)).pm() == true);
+    /* datetime(date(...), daytime(...)) */
+    TS_ASSERT_EQUALS(2013, datetime(date(2013,10,11),daytime(9,6,20,true)).year());
+    TS_ASSERT_EQUALS(10, datetime(date(2013,10,11),daytime(9,6,20,true)).mon());
+    TS_ASSERT_EQUALS(11, datetime(date(2013,10,11),daytime(9,6,20,true)).mday());
+    TS_ASSERT_EQUALS(9,  datetime(date(2013,10,11),daytime(9,6,20,true)).hour12());
+    TS_ASSERT_EQUALS(6,  datetime(date(2013,10,11),daytime(9,6,20,true)).min());
+    TS_ASSERT_EQUALS(20, datetime(date(2013,10,11),daytime(9,6,20,true)).sec());
+    TS_ASSERT(datetime(date(2013,10,11),daytime(9,6,20,true)).pm() == true);
   }
 
   void test__dst_update(void)

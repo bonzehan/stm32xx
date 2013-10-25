@@ -20,16 +20,16 @@
  * DEALINGS IN THE SOFTWARE
  */
 
-/** // doc: stm32xx/time.cpp {{{
- * @file stm32xx/time.cpp
+/** // doc: stm32xx/daytime.cpp {{{
+ * @file stm32xx/daytime.cpp
  * @todo Write documentation
  */ // }}}
-#include <stm32xx/time.hpp>
+#include <stm32xx/daytime.hpp>
 
 namespace stm32xx {
 
-bool time::
-inc_time() noexcept
+bool daytime::
+inc_daytime() noexcept
 {
   this->inc_sec();
   if(this->sec() == 0)
@@ -43,6 +43,55 @@ inc_time() noexcept
         }
     }
   return true;
+}
+
+int32_t daytime::
+dst_update(int32_t dst_s, int32_t std_s, int32_t s, bool dst)
+{
+  bool is_summer;
+  bool is_winter;
+
+  /* The transition from DST to STD time (-1 hour) is tricky. One hour repeats
+   * once as DST time and once as STD time. To avoid flapping between DST
+   * and STD time during this period, we exclude it from consiteration. This
+   * is why there is 1 hour gap between "is_summer" and "is_winter". */
+  if (dst_s < std_s)
+    {
+      /* Noth semisphere */
+      is_summer = (s >= dst_s && s < std_s);
+      is_winter = (s < dst_s  || s >= (std_s+hour_secs));
+    }
+  else
+    {
+      /* South semisphere */
+      is_summer = (s >= dst_s || s < std_s);
+      is_winter = (s < dst_s  && s >= (std_s+hour_secs)); 
+    }
+
+  if(is_summer)
+    {
+      /* Summer time */
+      if(!dst)
+        {
+          /* From now on, we have dst_s time */
+          //set_flags(flags() | summer_time);
+          //this->advance_datetime(+hour_secs);
+          return hour_secs;
+        }
+    }
+  else if(is_winter)
+    {
+      /* Winter time */
+      if(dst)
+        {
+          //this->advance_datetime(-hour_secs);
+          /* From now on, we have std_s time */
+          //set_flags(flags() & ~summer_time);
+          return -hour_secs;
+        }
+    }
+
+  return 0;
 }
 
 } /* namespace stm32xx */
