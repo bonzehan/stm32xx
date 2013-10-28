@@ -337,10 +337,10 @@ public: /* types */
        * The method takes year @c y as an argument and determines date
        * described by year @c y, month @ref mon, day of month @ref mday, day of
        * week @ref wday and @ref offset. The algorithm used to determine this
-       * date is to find the week day @ref wday next to the date {@c y}-{@ref
-       * mon}-{@ref mday} (see @ref find_wday()) and then add @ref offset to
-       * this date. The returned value is a day number reative to the beginning
-       * of the year @c y (0 for Jan 1st).
+       * date is to find the week day @ref wday next to the date {@c y}-
+       * {@ref mon}-{@ref mday} (see @ref find_wday()) and then add @ref offset
+       * to this date. The returned value is a day number reative to the
+       * beginning of the year @c y (0 for Jan 1st).
        *
        * @param y year,
        *

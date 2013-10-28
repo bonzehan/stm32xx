@@ -50,8 +50,8 @@ namespace stm32xx {
 /** // doc: stm32xx::daytime {{{
  * @brief Represent and manipulate daytime.
  *
- * The stm32xx::daytime may be used to represent and manipulate daytime. The time
- * is stored in binary form as three integers. These are:
+ * The stm32xx::daytime may be used to represent and manipulate daytime. The
+ * time is stored in binary form as three integers. These are:
  *
  * - hour (read by hour() method) - an integer in range <tt>[0 .. 23]</tt>,
  * - minute (read by min() method) - an integer in range <tt>[0 .. 59]</tt>,
@@ -157,13 +157,13 @@ public: /* member methods */
   constexpr daytime() noexcept 
     : _M_hour(0), _M_min(0), _M_sec(0), _M_flags(0)
   { }
-  /** // doc: daytime(s) {{{
+  /** // doc: daytime(c,f) {{{
    * @brief Constructor
-   * @param s initial value of the seconds' counter.
+   * @param c initial value of the seconds' counter.
    * @param f flags
    */ // }}}
-  constexpr daytime(sec_cnt_t s, flag_t f=0) noexcept 
-    : _M_hour(s/hour_secs), _M_min((s%hour_secs)/min_secs), _M_sec(s%min_secs),
+  constexpr daytime(sec_cnt_t c, flag_t f=0) noexcept 
+    : _M_hour(c/hour_secs), _M_min((c%hour_secs)/min_secs), _M_sec(c%min_secs),
       _M_flags(f)
   { }
   /** // doc: daytime(h,m,s) {{{
@@ -199,6 +199,11 @@ public: /* member methods */
   constexpr sec_cnt_t sec_cnt() const noexcept 
   {
     return sec_cnt(this->hour(), this->min(), this->sec());
+  }
+
+  constexpr sec_cnt_t sec_cnt2() const noexcept
+  {
+    return sec_cnt2(this->hour(), this->min(), this->sec(), this->isdst());
   }
 
   /* setters */
@@ -690,37 +695,37 @@ public: /* member methods */
   constexpr bool
   operator==(daytime const& other) const noexcept
   {
-    return (this->sec_cnt() == other.sec_cnt());
+    return (this->sec_cnt2() == other.sec_cnt2());
   }
   /// operator!=
   constexpr bool
   operator!=(daytime const& other) const noexcept
   {
-    return (this->sec_cnt() != other.sec_cnt());
+    return (this->sec_cnt2() != other.sec_cnt2());
   }
   /// operator<
   constexpr bool
   operator<(daytime const& other) const noexcept
   {
-    return (this->sec_cnt() < other.sec_cnt());
+    return (this->sec_cnt2() < other.sec_cnt2());
   }
   /// operator<=
   constexpr bool
   operator<=(daytime const& other) const noexcept
   {
-    return (this->sec_cnt() <= other.sec_cnt());
+    return (this->sec_cnt2() <= other.sec_cnt2());
   }
   /// operator>=
   constexpr bool
   operator>=(daytime const& other) const noexcept
   {
-    return (this->sec_cnt() >= other.sec_cnt());
+    return (this->sec_cnt2() >= other.sec_cnt2());
   }
   /// operator>
   constexpr bool
   operator>(daytime const& other) const noexcept
   {
-    return (this->sec_cnt() > other.sec_cnt());
+    return (this->sec_cnt2() > other.sec_cnt2());
   }
   /// operator +=
   inline daytime& operator += (sec_cnt_t secs) noexcept
@@ -771,6 +776,18 @@ public: /* static methods */
   constexpr static int32_t sec_cnt(int32_t h, int32_t m, int32_t s) noexcept
   {
     return hour_secs*h + min_secs*m + s;
+  }
+  /** // doc: sec_cnt2(h,m,s,dst) {{{
+   * @brief Determine seconds' counter value.
+   * @param h hour, an integer in range <tt>[0 .. 23]</tt>,
+   * @param m minute, an integer in range <tt>[0 .. 59]</tt>,
+   * @param s second, an integer in range <tt>[0 .. 59]</tt>,
+   * @param dst @c true if <tt>h-m-s</tt> is a Daylight Saving Time.
+   * @return seconds' counter value
+   */ // }}}
+  constexpr static int32_t sec_cnt2(int32_t h, int32_t m, int32_t s, bool dst) noexcept
+  {
+    return dst ? (sec_cnt(h,m,s) - hour_secs) : sec_cnt(h,m,s);
   }
   /** // doc: hour12(h) {{{
    * @brief Convert hour from 24-hour format to 12-hour format.
